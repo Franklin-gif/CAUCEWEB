@@ -25,6 +25,7 @@ const HomeView = ({ data, members }) => {
     }, []);
 
     return (
+        <>
         <div className="home-container">
             <header>
                 <div className="container">
@@ -167,19 +168,6 @@ const HomeView = ({ data, members }) => {
                 </div>
             </section>
 
-            {selectedMember && (
-                <div className="modal-overlay" onClick={() => setSelectedMember(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setSelectedMember(null)}>&times;</button>
-                        <img src={selectedMember.photo} alt={selectedMember.name} className="modal-img" />
-                        <h2>{selectedMember.name}</h2>
-                        <a href={selectedMember.instagram} target="_blank" rel="noopener noreferrer" className="instagram-btn">
-                            Ver Instagram
-                        </a>
-                    </div>
-                </div>
-            )}
-
             <footer>
                 <div className="container">
                     <p>&copy; 2026 CAUCE - Laboratorio de Acción Ciudadana</p>
@@ -189,6 +177,20 @@ const HomeView = ({ data, members }) => {
                 </div>
             </footer>
         </div>
+
+        {selectedMember && (
+            <div className="modal-overlay" onClick={() => setSelectedMember(null)}>
+                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <button className="modal-close" onClick={() => setSelectedMember(null)}>&times;</button>
+                    <img src={selectedMember.photo} alt={selectedMember.name} className="modal-img" />
+                    <h2>{selectedMember.name}</h2>
+                    <a href={selectedMember.instagram} target="_blank" rel="noopener noreferrer" className="instagram-btn">
+                        Ver Instagram
+                    </a>
+                </div>
+            </div>
+        )}
+        </>
     );
 };
 
