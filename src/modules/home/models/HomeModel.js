@@ -10,7 +10,7 @@ const HomeModel = {
             { title: "Elaboración y Aplicación de Bioinsumos", description: "Fortalecer capacidades para implementar prácticas sostenibles mediante la elaboración y uso de bioinsumos, protegiendo los recursos hídricos." },
             { title: "Agricultura Regenerativa", description: "Promover la comprensión de prácticas regenerativas que mejoren la infiltración del agua, la cobertura del suelo y reduzcan la contaminación de cuencas." },
             { title: "Reforestación y Restauración de Áreas", description: "Promover la reforestación de áreas degradadas en los bordes de la cuenca del Río La Villa para reducir la erosión del suelo y proteger el recurso hídrico." },
-            { title: "Economía circular aplicada a la producción agrícola", description: "Capacitar en principios de economía circular para promover prácticas sostenibles que reduzcan la contaminación del río y generen ahorro en fincas." }
+            { title: "Economía circular aplicada al manejo de agua", description: "Capacitar en principios de economía circular para promover prácticas sostenibles que reduzcan la contaminación del río y generen ahorro en fincas." }
         ],
         faqs: [
             {
