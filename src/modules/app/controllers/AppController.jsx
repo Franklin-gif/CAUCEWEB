@@ -61,7 +61,7 @@ const AppController = ({ onExitApp }) => {
     <div className="splash-screen">
        <div className="splash-content">
           <div className="splash-logo-circle">
-             <img src="https://res.cloudinary.com/dhxaodqr9/image/upload/v1743276609/LogoCauce_p8m9p8.png" alt="CAUCE" />
+             <img src="/logo.png" alt="CAUCE" />
           </div>
           <div className="splash-loader"></div>
           <p>Sincronizando con CAUCE...</p>
