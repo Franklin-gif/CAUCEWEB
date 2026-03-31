@@ -16,6 +16,7 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSocialRegistering, setIsSocialRegistering] = useState(false);
+  const [step, setStep] = useState(1);
 
   const PANAMA_PROVINCES = [
     'Bocas del Toro', 'Chiriquí', 'Coclé', 'Colón', 'Darién', 
@@ -80,14 +81,20 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
       if (snapshot.exists()) {
         setError("Ya tienes una cuenta registrada. Por favor, inicia sesión.");
       } else {
-        // Pre-llenamos el formulario pero NO guardamos todavía
-        setFormData(prev => ({
-          ...prev,
-          name: googleUser.displayName || '',
-          email: googleUser.email || '',
-        }));
-        setIsSocialRegistering(true);
-        // Eliminado showAlert porque no est definido en esta vista
+        // Al ser registro por Google en el Paso 2, ya tenemos Nombre y Provincia
+        const userProfile = {
+          name: formData.name,
+          province: formData.province,
+          email: googleUser.email,
+          isAdmin: false, 
+          status: 'pending',
+          photoUrl: googleUser.photoURL || null,
+          createdAt: new Date().toISOString()
+        };
+
+        await set(ref(db, `users/${googleUser.uid}`), userProfile);
+        await signOut(auth);
+        setIsSuccess(true);
       }
     } catch (err) {
       console.error("Google Auth Error:", err);
@@ -110,7 +117,11 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
         ) : (
           <>
             <h1 className="auth-logo">CAUCE</h1>
-            <h2 className="auth-title">Crear Cuenta</h2>
+            <div className="auth-step-title">
+               <span className={step === 1 ? 'active' : ''}>DAtOS BÁSICOS</span>
+               <span style={{opacity: 0.3}}>|</span>
+               <span className={step === 2 ? 'active' : ''}>CREAR ACCESO</span>
+            </div>
 
             {error && (
               <div className="auth-error-msg">
@@ -119,78 +130,104 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
             )}
 
             <form className="auth-form" onSubmit={handleSubmit}>
-              <div className="input-group">
-                <label>Nombre Completo</label>
-                 <input 
-                   name="name"
-                   type="text" 
-                   placeholder="Ej: Juan Pérez" 
-                   onChange={handleChange}
-                   value={formData.name}
-                   required
-                 />
-              </div>
-              <div className="input-group">
-                <label>Provincia</label>
-                <select name="province" onChange={handleChange} required className="auth-select">
-                   <option value="">Selecciona provincia</option>
-                   {PANAMA_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              <div className="input-group">
-                <label>Correo Electrónico</label>
-                <input 
-                  name="email"
-                  type="email" 
-                  placeholder="Ej: usuario@cauce.org" 
-                  onChange={handleChange}
-                  value={formData.email}
-                  required
-                  disabled={isSocialRegistering}
-                />
-              </div>
-                <div className="input-group">
-                  <label>Contraseña</label>
-                  <div className="password-input-wrapper">
+              {step === 1 ? (
+                <>
+                  <div className="input-group">
+                    <label>Nombre Completo</label>
                      <input 
-                       name="password"
-                       type={showPass ? "text" : "password"} 
-                       placeholder="••••••••" 
+                       name="name"
+                       type="text" 
+                       placeholder="Ej: Juan Pérez" 
                        onChange={handleChange}
-                       required={!isSocialRegistering}
-                       disabled={isSocialRegistering}
-                       value={isSocialRegistering ? 'google_auth_placeholder' : formData.password}
+                       value={formData.name}
+                       required
                      />
-                     <button 
-                       type="button" 
-                       className="toggle-pass-btn" 
-                       onClick={() => setShowPass(!showPass)}
-                       disabled={isSocialRegistering}
-                     >
-                       {showPass ? (
-                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                           <circle cx="12" cy="12" r="3" />
-                         </svg>
-                       ) : (
-                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                           <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                           <line x1="1" y1="1" x2="23" y2="23" />
-                         </svg>
-                       )}
+                  </div>
+                  <div className="input-group">
+                    <label>Provincia</label>
+                    <select name="province" onChange={handleChange} required className="auth-select">
+                       <option value="">Selecciona provincia</option>
+                       {PANAMA_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-primary" 
+                    onClick={() => {
+                      if (formData.name && formData.province) setStep(2);
+                      else setError("Por favor completa los datos básicos");
+                    }}
+                  >
+                    CONTINUAR →
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="input-group">
+                    <label>Correo Electrónico</label>
+                    <input 
+                      name="email"
+                      type="email" 
+                      placeholder="Ej: usuario@cauce.org" 
+                      onChange={handleChange}
+                      value={formData.email}
+                      required
+                      disabled={isSocialRegistering}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label>Contraseña</label>
+                    <div className="password-input-wrapper">
+                       <input 
+                         name="password"
+                         type={showPass ? "text" : "password"} 
+                         placeholder="••••••••" 
+                         onChange={handleChange}
+                         required={!isSocialRegistering}
+                         disabled={isSocialRegistering}
+                         value={isSocialRegistering ? 'google_auth_placeholder' : formData.password}
+                       />
+                       <button 
+                         type="button" 
+                         className="toggle-pass-btn" 
+                         onClick={() => setShowPass(!showPass)}
+                         disabled={isSocialRegistering}
+                       >
+                         {showPass ? (
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                             <circle cx="12" cy="12" r="3" />
+                           </svg>
+                         ) : (
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                             <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                             <line x1="1" y1="1" x2="23" y2="23" />
+                           </svg>
+                         )}
+                       </button>
+                    </div>
+                  </div>
+                  
+                  <div style={{display: 'flex', gap: '10px'}}>
+                     <button type="button" className="btn-secondary" onClick={() => setStep(1)} disabled={isLoading}>
+                        ATRÁS
+                     </button>
+                     <button type="submit" className="btn-primary" disabled={isLoading} style={{flex: 2}}>
+                        {isLoading ? "REGISTRANDO..." : "REGISTRARSE"}
                      </button>
                   </div>
-                </div>
-              <button type="submit" className="btn-primary" disabled={isLoading}>
-                 {isLoading ? "REGISTRANDO..." : "REGISTRARSE"}
-              </button>
-              
-              <div className="auth-divider"><span>O CONTINUAR CON</span></div>
-              
-              <button type="button" className="btn-google" onClick={handleGoogleAuth} disabled={isLoading}>
-                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" />
-                 Google
-              </button>
+                  
+                  {!isSocialRegistering && (
+                    <>
+                      <div className="auth-divider"><span>O CONTINUAR CON</span></div>
+                      <button type="button" className="btn-google" onClick={handleGoogleAuth} disabled={isLoading}>
+                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" />
+                         Google
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
             </form>
             <div className="auth-footer">
               <div>¿Ya tienes cuenta? <button onClick={() => onModeChange('login')}>Iniciar Sesión</button></div>
