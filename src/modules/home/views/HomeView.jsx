@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import heroImg from '/src/assets/images/hero.png';
 import logoImg from '/src/assets/images/logo.png';
 
-const HomeView = ({ data, members }) => {
+const HomeView = ({ data, members, onEnterApp }) => {
     const [selectedMember, setSelectedMember] = useState(null);
     const [menuOpen, setMenuOpen] = useState(false);
 
@@ -40,6 +40,7 @@ const HomeView = ({ data, members }) => {
                             <a href="#componentes" onClick={() => setMenuOpen(false)}>Componentes</a>
                             <a href="#capacitacion" onClick={() => setMenuOpen(false)}>Capacitación</a>
                             <a href="#preguntas" onClick={() => setMenuOpen(false)}>Preguntas</a>
+                            <button className="nav-cta" onClick={onEnterApp}>Plataforma</button>
                         </div>
                         <div className={`mobile-menu-btn ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(!menuOpen)}>
                             <span></span>
