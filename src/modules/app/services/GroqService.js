@@ -1,9 +1,23 @@
 import Groq from "groq-sdk";
 
-const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
+// Inicialización diferida para evitar errores si la API KEY no existe en el entorno
+let groqInstance = null;
+
+const getGroqClient = () => {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  if (!apiKey) {
+    console.warn("GROQ_API_KEY is missing. AI Chatbot will be disabled.");
+    return null;
+  }
+  
+  if (!groqInstance) {
+    groqInstance = new Groq({
+      apiKey: apiKey,
+      dangerouslyAllowBrowser: true,
+    });
+  }
+  return groqInstance;
+};
 
 /* BASE DE CONOCIMIENTO EXTRAÍDA DEL INFORME ESTRATÉGICO 2026 */
 const CAUCE_KNOWLEDGE = `
@@ -23,6 +37,11 @@ INFORMACIÓN DEL PROYECTO CAUCE:
 `;
 
 export const getGroqChatCompletion = async (messages) => {
+  const groq = getGroqClient();
+  if (!groq) {
+      return "Lo siento, el asistente virtual no está habilitado en este momento debido a un problema de configuración. Por favor, intenta de nuevo más tarde.";
+  }
+
   try {
     const response = await groq.chat.completions.create({
       messages: [
