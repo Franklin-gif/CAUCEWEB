@@ -4,9 +4,16 @@ import logoImg from '/src/assets/images/logo.png';
 
 const HomeView = ({ data, members, onEnterApp }) => {
     const [selectedMember, setSelectedMember] = useState(null);
+    const [showPwaTutorial, setShowPwaTutorial] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [pwaDevice, setPwaDevice] = useState(null); // 'ios' or 'android'
 
     useEffect(() => {
+        // Detectar dispositivo para tutorial PWA predeterminado
+        const ua = navigator.userAgent.toLowerCase();
+        if (/iphone|ipad|ipod/.test(ua)) setPwaDevice('ios');
+        else setPwaDevice('android');
+
         const reveal = () => {
             const reveals = document.querySelectorAll(".reveal");
             for (let i = 0; i < reveals.length; i++) {
@@ -40,7 +47,7 @@ const HomeView = ({ data, members, onEnterApp }) => {
                             <a href="#componentes" onClick={() => setMenuOpen(false)}>Componentes</a>
                             <a href="#capacitacion" onClick={() => setMenuOpen(false)}>Capacitación</a>
                             <a href="#preguntas" onClick={() => setMenuOpen(false)}>Preguntas</a>
-                            <button className="nav-cta" onClick={onEnterApp}>Plataforma</button>
+                            <button className="nav-cta" onClick={() => setShowPwaTutorial(true)}>Plataforma</button>
                         </div>
                         <div className={`mobile-menu-btn ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(!menuOpen)}>
                             <span></span>
@@ -80,7 +87,8 @@ const HomeView = ({ data, members, onEnterApp }) => {
                     </div>
                 </div>
             </section>
-
+            
+            {/* ... REST OF THE BODY ... */}
             <section id="sabias" className="did-you-know section-padding">
                 <div className="container">
                     <div className="section-title reveal">
@@ -179,6 +187,7 @@ const HomeView = ({ data, members, onEnterApp }) => {
             </footer>
         </div>
 
+        {/* MODAL INTEGRANTE */}
         {selectedMember && (
             <div className="modal-overlay" onClick={() => setSelectedMember(null)}>
                 <div className="modal-content" onClick={e => e.stopPropagation()}>
@@ -188,6 +197,60 @@ const HomeView = ({ data, members, onEnterApp }) => {
                     <a href={selectedMember.instagram} target="_blank" rel="noopener noreferrer" className="instagram-btn">
                         Ver Instagram
                     </a>
+                </div>
+            </div>
+        )}
+
+        {/* MODAL PWA TUTORIAL */}
+        {showPwaTutorial && (
+            <div className="modal-overlay" onClick={() => setShowPwaTutorial(false)}>
+                <div className="modal-content pwa-tutorial-content" onClick={e => e.stopPropagation()}>
+                    <button className="modal-close" onClick={() => setShowPwaTutorial(false)}>&times;</button>
+                    
+                    <div className="pwa-header">
+                        <img src={logoImg} alt="logo" className="pwa-mini-logo" />
+                        <h2>Instalar CAUCE App</h2>
+                        <p>Lleva la plataforma de seguimiento contigo en tu pantalla de inicio.</p>
+                    </div>
+
+                    <div className="pwa-tabs">
+                        <button 
+                            className={`pwa-tab ${pwaDevice === 'android' ? 'active' : ''}`}
+                            onClick={() => setPwaDevice('android')}
+                        >
+                            Android
+                        </button>
+                        <button 
+                            className={`pwa-tab ${pwaDevice === 'ios' ? 'active' : ''}`}
+                            onClick={() => setPwaDevice('ios')}
+                        >
+                            iPhone / iOS
+                        </button>
+                    </div>
+
+                    <div className="pwa-steps">
+                        {pwaDevice === 'android' ? (
+                            <div className="pwa-step-list">
+                                <div className="pwa-step-item"><b>1.</b> Abre esta página en <b>Chrome</b>.</div>
+                                <div className="pwa-step-item"><b>2.</b> Toca los <b>tres puntos (⋮)</b> en la esquina superior derecha.</div>
+                                <div className="pwa-step-item"><b>3.</b> Selecciona <b>"Instalar aplicación"</b> o <b>"Añadir a pantalla de inicio"</b>.</div>
+                                <div className="pwa-step-item"><b>4.</b> Confirma y ¡listo!</div>
+                            </div>
+                        ) : (
+                            <div className="pwa-step-list">
+                                <div className="pwa-step-item"><b>1.</b> Abre esta página en <b>Safari</b>.</div>
+                                <div className="pwa-step-item"><b>2.</b> Toca el botón <b>Compartir (📤)</b> en la barra inferior.</div>
+                                <div className="pwa-step-item"><b>3.</b> Desliza hacia abajo y toca en <b>"Añadir a la pantalla de inicio"</b>.</div>
+                                <div className="pwa-step-item"><b>4.</b> Pulsa <b>"Añadir"</b> en la esquina superior derecha.</div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="pwa-footer-btns">
+                        <button className="btn-primary" onClick={onEnterApp}>
+                            CONTINUAR A LA PLATAFORMA →
+                        </button>
+                    </div>
                 </div>
             </div>
         )}
