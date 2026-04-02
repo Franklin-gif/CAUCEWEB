@@ -14,7 +14,6 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [isSocialRegistering, setIsSocialRegistering] = useState(false);
   const [step, setStep] = useState(1);
 
@@ -55,9 +54,7 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
       };
 
       await set(ref(db, `users/${userId}`), userProfile);
-      await signOut(auth);
-      setIsSuccess(true);
-
+      // No cerramos sesión aquí manually, dejamos que el controlador lo detecte y muestre PendingView
     } catch (err) {
       console.error("Register Error:", err);
       if (err.code === 'auth/email-already-in-use') {
@@ -65,7 +62,6 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
       } else {
         setError("Error al crear la cuenta. Verifica tus datos.");
       }
-    } finally {
       setIsLoading(false);
     }
   };
@@ -80,8 +76,8 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
       const snapshot = await get(ref(db, `users/${googleUser.uid}`));
       if (snapshot.exists()) {
         setError("Ya tienes una cuenta registrada. Por favor, inicia sesión.");
+        setIsLoading(false);
       } else {
-        // Al ser registro por Google en el Paso 2, ya tenemos Nombre y Provincia
         const userProfile = {
           name: formData.name,
           province: formData.province,
@@ -93,13 +89,11 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
         };
 
         await set(ref(db, `users/${googleUser.uid}`), userProfile);
-        await signOut(auth);
-        setIsSuccess(true);
+        // Igual que arriba, el controlador tomará el mando.
       }
     } catch (err) {
       console.error("Google Auth Error:", err);
       setError("Error con Google.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -107,20 +101,22 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
   return (
     <div className="auth-page">
       <div className="auth-card glass">
-        {isSuccess ? (
-          <div className="success-register-view">
-             <div className="success-icon-animate">📩</div>
-             <h2>¡Solicitud Procesada!</h2>
-             <p>Tu solicitud está siendo procesada, te llegará una notificación cuando se te acepte. Gracias por tu paciencia.</p>
-             <button className="btn-primary" onClick={() => onModeChange('login')}>REGRESAR A LA WEB</button>
-          </div>
-        ) : (
           <>
-            <h1 className="auth-logo">CAUCE</h1>
-            <div className="auth-step-title">
-               <span className={step === 1 ? 'active' : ''}>DAtOS BÁSICOS</span>
-               <span style={{opacity: 0.3}}>|</span>
-               <span className={step === 2 ? 'active' : ''}>CREAR ACCESO</span>
+            <div className="auth-header">
+               <h1 className="auth-logo">CAUCE</h1>
+               <h2 className="auth-title">Crear Cuenta</h2>
+            </div>
+
+            <div className="auth-steps-container">
+               <div className={`auth-step ${step === 1 ? 'active' : ''}`}>
+                  <div className="auth-step-circle">1</div>
+                  <span className="auth-step-label">Perfil</span>
+               </div>
+               <div className="auth-step-line"></div>
+               <div className={`auth-step ${step === 2 ? 'active' : ''}`}>
+                  <div className="auth-step-circle">2</div>
+                  <span className="auth-step-label">Acceso</span>
+               </div>
             </div>
 
             {error && (
@@ -137,7 +133,7 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
                      <input 
                        name="name"
                        type="text" 
-                       placeholder="Ej: Juan Pérez" 
+                       placeholder="Tu nombre y apellido" 
                        onChange={handleChange}
                        value={formData.name}
                        required
@@ -145,17 +141,18 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
                   </div>
                   <div className="input-group">
                     <label>Provincia</label>
-                    <select name="province" onChange={handleChange} required className="auth-select">
-                       <option value="">Selecciona provincia</option>
+                    <select name="province" value={formData.province} onChange={handleChange} required className="auth-select">
+                       <option value="">Selecciona tu provincia</option>
                        {PANAMA_PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </div>
                   <button 
                     type="button" 
                     className="btn-primary" 
+                    style={{marginTop: '1rem'}}
                     onClick={() => {
                       if (formData.name && formData.province) setStep(2);
-                      else setError("Por favor completa los datos básicos");
+                      else setError("Completa tu nombre y provincia para continuar.");
                     }}
                   >
                     CONTINUAR →
@@ -168,7 +165,7 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
                     <input 
                       name="email"
                       type="email" 
-                      placeholder="Ej: usuario@cauce.org" 
+                      placeholder="usuario@ejemplo.com" 
                       onChange={handleChange}
                       value={formData.email}
                       required
@@ -181,11 +178,11 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
                        <input 
                          name="password"
                          type={showPass ? "text" : "password"} 
-                         placeholder="••••••••" 
+                         placeholder="Mínimo 6 caracteres" 
                          onChange={handleChange}
                          required={!isSocialRegistering}
                          disabled={isSocialRegistering}
-                         value={isSocialRegistering ? 'google_auth_placeholder' : formData.password}
+                         value={isSocialRegistering ? '**********' : formData.password}
                        />
                        <button 
                          type="button" 
@@ -208,33 +205,32 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
                     </div>
                   </div>
                   
-                  <div style={{display: 'flex', gap: '10px'}}>
-                     <button type="button" className="btn-secondary" onClick={() => setStep(1)} disabled={isLoading}>
+                  <div style={{display: 'flex', gap: '10px', marginTop: '1rem'}}>
+                     <button type="button" className="btn-secondary" onClick={() => setStep(1)} disabled={isLoading} style={{flex: 1, border: '1px solid var(--border)'}}>
                         ATRÁS
                      </button>
                      <button type="submit" className="btn-primary" disabled={isLoading} style={{flex: 2}}>
-                        {isLoading ? "REGISTRANDO..." : "REGISTRARSE"}
+                        {isLoading ? "CREANDO..." : "REGISTRARSE"}
                      </button>
                   </div>
                   
                   {!isSocialRegistering && (
                     <>
-                      <div className="auth-divider"><span>O CONTINUAR CON</span></div>
+                      <div className="auth-divider"><span>O CON TU CUENTA</span></div>
                       <button type="button" className="btn-google" onClick={handleGoogleAuth} disabled={isLoading}>
                          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" />
-                         Google
+                         Continuar con Google
                       </button>
                     </>
                   )}
                 </>
               )}
             </form>
-            <div className="auth-footer">
-              <div>¿Ya tienes cuenta? <button onClick={() => onModeChange('login')}>Iniciar Sesión</button></div>
-              {onBack && <div style={{marginTop: '1rem'}}><button onClick={onBack} style={{opacity: 0.7}}>← Volver al inicio</button></div>}
+            <div className="auth-footer" style={{marginTop: '1.5rem'}}>
+              <div>¿Ya tienes una cuenta? <button onClick={() => onModeChange('login')} style={{color: 'var(--primary)', fontWeight: 700}}>Inicia Sesión</button></div>
+              {onBack && <div style={{marginTop: '1rem'}}><button onClick={onBack} style={{opacity: 0.6, fontSize: '0.8rem'}}>← Volver a la página principal</button></div>}
             </div>
           </>
-        )}
       </div>
     </div>
   );

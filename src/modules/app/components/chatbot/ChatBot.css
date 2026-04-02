@@ -1,0 +1,202 @@
+.chatbot-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Botón flotante Transparente y Limpio */
+.chatbot-toggle {
+  width: 75px; /* Un poco más grande */
+  height: 75px;
+  background: transparent; /* Sin fondo para que luzca el remove-bg */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: none; /* Quitamos bordes pesados */
+  overflow: visible; /* Para que las plantas de la cabeza no se corten */
+  padding: 0;
+  cursor: pointer;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
+}
+
+.chatbot-toggle img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.chatbot-toggle:hover {
+  transform: scale(1.1) translateY(-5px);
+}
+
+/* Ventana de Chat - Más Compacta */
+.chatbot-window {
+  position: absolute;
+  bottom: 85px;
+  right: 0;
+  width: 340px; /* Reducido de 380px */
+  height: 500px; /* Reducido de 580px */
+  max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--rad-lg);
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(20px) scale(0.95);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: bottom right;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+  background: white;
+}
+
+.chatbot-window.open {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Header Verde CAUCE */
+.chatbot-header {
+  padding: 20px;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatbot-header-info h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.chatbot-header-info p {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.close-btn {
+  color: white;
+  padding: 4px;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+/* Área de Mensajes con Avatares Grandes */
+.chatbot-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background: #fdfdfd;
+}
+
+.message-wrapper {
+  display: flex;
+  gap: 12px;
+  max-width: 85%;
+  animation: messageAppear 0.3s ease-out;
+}
+
+.message-wrapper.assistant {
+  align-self: flex-start;
+}
+
+.message-wrapper.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 45px; /* Avatar más grande en el mensaje */
+  height: 45px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.user-avatar-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.message {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.message.user {
+  background: var(--primary);
+  color: white;
+  border-top-right-radius: 2px;
+}
+
+.message.assistant {
+  background: white;
+  color: var(--text);
+  border-top-left-radius: 2px;
+  border: 1px solid #eee;
+}
+
+/* Input y Botones */
+.chatbot-input-container {
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 10px;
+}
+
+.chatbot-input-container input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 25px; /* Más redondeado */
+  outline: none;
+}
+
+.send-btn {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scrollbar invisible pero funcional */
+.chatbot-messages::-webkit-scrollbar {
+  width: 3px;
+}
+.chatbot-messages::-webkit-scrollbar-thumb {
+  background: #eee;
+}

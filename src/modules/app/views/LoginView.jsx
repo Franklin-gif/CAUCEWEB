@@ -10,7 +10,6 @@ const LoginView = ({ onAuth, onModeChange, onBack }) => {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,25 +39,10 @@ const LoginView = ({ onAuth, onModeChange, onBack }) => {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, cleanInput, password);
-      const snapshot = await get(ref(db, `users/${userCredential.user.uid}`));
-      
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        if (userData.status === 'accepted' || userData.isAdmin) {
-          onAuth({ uid: userCredential.user.uid, email: cleanInput, ...userData });
-        } else if (userData.status === 'denied') {
-          setError("Acceso denegado por el administrador.");
-        } else {
-          setIsSuccess(true);
-        }
-      } else {
-        // Si no existe perfil en DB, no dejamos entrar y pedimos registro
-        setError("Perfil incompleto. Por favor, realiza el registro correctamente.");
-      }
+      // El controlador detectará el login y si está pendiente lo mandará a PendingView
     } catch (err) {
       console.error("Login Failure:", err);
       setError("Correo o contraseña incorrectos.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -67,28 +51,11 @@ const LoginView = ({ onAuth, onModeChange, onBack }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      
-      const snapshot = await get(ref(db, `users/${user.uid}`));
-      if (snapshot.exists()) {
-        const userData = snapshot.val();
-        if (userData.status === 'accepted' || userData.isAdmin) {
-          onAuth({ uid: user.uid, email: user.email, ...userData });
-        } else if (userData.status === 'denied') {
-          setError("Acceso denegado.");
-        } else {
-          // Si está pendiente, mostramos el aviso
-          setIsSuccess(true);
-        }
-      } else {
-         // Si no existe, lo mandamos a registro
-         setError("No tienes cuenta registrada. Por favor, crea una primero.");
-      }
+      await signInWithPopup(auth, googleProvider);
+      // El controlador se encarga de verificar el status
     } catch (err) {
       console.error("Google Auth Error:", err);
       setError("Error con Google.");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -96,14 +63,6 @@ const LoginView = ({ onAuth, onModeChange, onBack }) => {
   return (
     <div className="auth-page">
       <div className="auth-card glass">
-        {isSuccess ? (
-          <div className="success-register-view">
-             <div className="success-icon-animate">📩</div>
-             <h2>Solicitud en Proceso</h2>
-             <p>Tu cuenta todavía no ha sido activada por el administrador. Te notificaremos cuando puedas ingresar.</p>
-             <button className="btn-primary" onClick={() => setIsSuccess(false)}>ENTENDIDO</button>
-          </div>
-        ) : (
           <>
             <div className="auth-header">
                <h1 className="auth-logo">CAUCE</h1>
@@ -132,51 +91,50 @@ const LoginView = ({ onAuth, onModeChange, onBack }) => {
               <div className="input-group">
                 <label>Contraseña</label>
                 <div className="password-input-wrapper">
-                  <input 
-                    name="cauce_pass_field"
-                    type={showPass ? "text" : "password"} 
-                    placeholder="••••••••" 
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setError(null); }}
-                    autoComplete="new-password"
-                    required
-                  />
-                  <button 
-                 type="button" 
-                 className="toggle-pass-btn" 
-                 onClick={() => setShowPass(!showPass)}
-               >
-                 {showPass ? (
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                     <circle cx="12" cy="12" r="3" />
-                   </svg>
-                 ) : (
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                     <line x1="1" y1="1" x2="23" y2="23" />
-                   </svg>
-                 )}
-               </button>
+                   <input 
+                     name="cauce_pass_field"
+                     type={showPass ? "text" : "password"} 
+                     placeholder="••••••••" 
+                     value={password}
+                     onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                     autoComplete="new-password"
+                     required
+                   />
+                   <button 
+                  type="button" 
+                  className="toggle-pass-btn" 
+                  onClick={() => setShowPass(!showPass)}
+                >
+                  {showPass ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  )}
+                </button>
                 </div>
               </div>
-              <button type="submit" className="btn-primary" disabled={isLoading}>
+              <button type="submit" className="btn-primary" disabled={isLoading} style={{marginTop: '0.5rem'}}>
                  {isLoading ? "CARGANDO..." : "ENTRAR"}
               </button>
               
-              <div className="auth-divider"><span>O CONTINUAR CON</span></div>
+              <div className="auth-divider"><span>O CON TU CUENTA</span></div>
               
               <button type="button" className="btn-google" onClick={handleGoogleAuth} disabled={isLoading}>
                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" />
-                 Google
+                 Continuar con Google
               </button>
             </form>
-            <div className="auth-footer">
-              <div>¿No tienes cuenta? <button onClick={() => onModeChange('register')}>Crear una</button></div>
-              {onBack && <div style={{marginTop: '1rem'}}><button onClick={onBack} style={{opacity: 0.7}}>← Volver al inicio</button></div>}
+            <div className="auth-footer" style={{marginTop: '1.5rem'}}>
+              <div>¿No tienes una cuenta? <button onClick={() => onModeChange('register')} style={{color: 'var(--primary)', fontWeight: 700}}>Crear una</button></div>
+              {onBack && <div style={{marginTop: '1rem'}}><button onClick={onBack} style={{opacity: 0.6, fontSize: '0.8rem'}}>← Volver a la página principal</button></div>}
             </div>
           </>
-        )}
       </div>
     </div>
   );

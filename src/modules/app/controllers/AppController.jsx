@@ -5,6 +5,7 @@ import { ref, get } from 'firebase/database';
 import LoginView from '../views/LoginView';
 import RegisterView from '../views/RegisterView';
 import MainView from '../views/MainView';
+import PendingView from '../views/PendingView';
 
 const AppController = ({ onExitApp }) => {
   const [user, setUser] = useState(null);
@@ -26,10 +27,10 @@ const AppController = ({ onExitApp }) => {
              setUser({ uid: u.uid, email: u.email, ...profile, isAdmin: isPrivileged });
              setMode('dashboard');
           } else {
-             // Si no esta aprobado, lo mantenemos en el flujo de Auth
+             // Si el perfil existe pero no esta aceptado, lo mandamos a la pantalla de evaluacion
              await signOut(auth);
              setUser(null);
-             setMode('login');
+             setMode('pending-evaluation');
           }
         } catch (e) {
           console.error("Auth Failure:", e);
@@ -38,12 +39,13 @@ const AppController = ({ onExitApp }) => {
         }
       } else {
         setUser(null);
+        // Evitar que si estamos en registro o pendiente, nos mande de golpe a login
         if (mode === 'dashboard') setMode('login');
       }
       setLoading(false);
     });
     return () => unsub();
-  }, []);
+  }, [mode]); // Dependemos del modo para no resetearlo agresivamente
 
   const handleAuth = (userData) => {
     setUser(userData);
@@ -75,6 +77,8 @@ const AppController = ({ onExitApp }) => {
       return user ? <MainView user={user} onLogout={handleLogout} /> : <LoginView onAuth={handleAuth} onModeChange={setMode} onBack={onExitApp} />;
     case 'register':
       return <RegisterView onAuth={handleAuth} onModeChange={setMode} onBack={onExitApp} />;
+    case 'pending-evaluation':
+      return <PendingView onBack={() => setMode('login')} />;
     default:
       return <LoginView onAuth={handleAuth} onModeChange={setMode} onBack={onExitApp} />;
   }

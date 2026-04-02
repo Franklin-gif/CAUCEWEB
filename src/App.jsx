@@ -3,6 +3,8 @@ import './App.css'
 import HomeController from './modules/home/controllers/HomeController'
 import AppController from './modules/app/controllers/AppController'
 
+import ChatBot from './modules/app/components/chatbot/ChatBot'
+
 function App() {
   const [view, setView] = useState('landing') // 'landing' or 'app'
 
@@ -13,6 +15,7 @@ function App() {
       ) : (
         <AppController onExitApp={() => setView('landing')} />
       )}
+      <ChatBot />
     </>
   )
 }
