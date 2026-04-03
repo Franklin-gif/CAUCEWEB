@@ -40,82 +40,12 @@ const MainView = ({ user, onLogout }) => {
     province: user?.province, 
     handle: user?.handle || user?.uid?.substring(0,6) 
   });
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [testLoading, setTestLoading] = useState(false);
 
   const isAdmin = user?.isAdmin || user?.email === 'caucepanama@gmail.com';
 
-  // -- Configuración de Notificaciones OneSignal --
-  useEffect(() => {
-    if (!user || !window.OneSignalDeferred) return;
-
-    window.OneSignalDeferred.push(async function(OneSignal) {
-      // Vincular el ID de Firebase con OneSignal para seguimiento
-      await OneSignal.login(user.uid);
-      setPushEnabled(OneSignal.Notifications.permission);
-      
-      // Escuchar cambios de permiso
-      OneSignal.Notifications.addEventListener("permissionChange", (permission) => {
-         setPushEnabled(permission);
-      });
-    });
-  }, [user]);
-
-  const handleTogglePush = async () => {
-    if (!window.OneSignalDeferred) return;
-    
-    window.OneSignalDeferred.push(async function(OneSignal) {
-       if (!pushEnabled) {
-          const result = await OneSignal.Notifications.requestPermission();
-          if (result) setPushEnabled(true);
-       } else {
-          // Desactivar recibimiento de notificaciones
-          await OneSignal.User.PushSubscription.optOut();
-          setPushEnabled(false);
-          showAlert("Notificaciones desactivadas en este dispositivo.");
-       }
-    });
- };
-
-  const handleTestPush = async () => {
-     if (!pushEnabled || pushEnabled === 'denied') {
-        showAlert("Primero debes activar las notificaciones en Configuración.", "error");
-        return;
-     }
-     setTestLoading(true);
-     await sendPushNotification("Prueba de CAUCE 🔔", "¡Genial! Tu dispositivo está recibiendo notificaciones push correctamente.");
-     setTestLoading(false);
-     showAlert("Enviando notificación de prueba...");
-  };
-
-  // -- Envío de Notificaciones Push vía OneSignal REST API --
+  // -- Notificaciones desactivadas --
   const sendPushNotification = async (title, body) => {
-     try {
-        const response = await fetch('https://onesignal.com/api/v1/notifications', {
-           method: 'POST',
-           headers: {
-              'Content-Type': 'application/json; charset=utf-8',
-              'Authorization': 'Basic os_v2_app_unclmmphvrhs7nxltm4uswb7davnvdk4w3oe6nvx7t2pfh4eshywp4f6oe3cg7thyuv2ksorf6tqqxwbsaf3vq7zbvncc2pjp55rgxa'
-           },
-           body: JSON.stringify({
-              app_id: "a344b631-e7ac-4f2f-b6eb-9b3949583f18",
-              included_segments: ["All"], // Enviar a todos los suscritos
-              headings: { "en": title, "es": title },
-              contents: { "en": body, "es": body },
-              url: "https://caucepanama.online" // Opcional: URL al tocar la notificación
-           })
-        });
-        
-        const data = await response.json();
-        console.log("Notificación enviada con éxito:", data);
-        
-        // También guardamos rastro en Realtime para el historial (Opcional)
-        const notifRef = push(ref(db, 'notifications_history'));
-        await set(notifRef, { title, body, timestamp: new Date().toISOString() });
-     } catch (error) {
-        console.error("Error al enviar notificación push:", error);
-        showAlert("Error al enviar notificación remota", "error");
-     }
+     console.log("Notificación omitida (sistema desactivado):", title);
   };
 
   // 1. Suscripcin a Tareas (Realtime)
@@ -424,19 +354,6 @@ const MainView = ({ user, onLogout }) => {
               <p style={{fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600}}>{userEmail}</p>
               <p style={{fontSize: '0.85rem', marginTop: '1rem'}}>{userProvince || 'Productor CAUCE'}</p>
             </div>
-
-            <div className="test-push-container" style={{marginTop: '2.5rem', width: '100%', borderTop: '1px solid #f1f5f9', paddingTop: '2rem'}}>
-               <button 
-                  className={`btn-test-push ${testLoading ? 'loading' : ''}`}
-                  onClick={handleTestPush}
-                  disabled={testLoading}
-               >
-                  {testLoading ? 'Enviando...' : '🔔 PROBAR NOTIFICACIÓN'}
-               </button>
-               <p style={{fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.75rem', textAlign: 'center'}}>
-                  Se enviará un aviso de prueba a todos tus dispositivos suscritos.
-               </p>
-            </div>
           </div>
         )}
 
@@ -523,19 +440,6 @@ const MainView = ({ user, onLogout }) => {
                    <div className="input-field">
                       <label>Correo Electrónico</label>
                       <input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} readOnly={!isEditingProfile} className={!isEditingProfile ? 'field-locked' : ''} />
-                   </div>
-                </div>
-
-                <div className="app-preferences-section">
-                   <h3>Preferencias de la App (PWA)</h3>
-                   <div className="preference-item card-action">
-                      <div className="pref-info">
-                         <strong>Notificaciones Push</strong>
-                         <p>Recibe avisos sobre nuevas jornadas y tareas.</p>
-                      </div>
-                      <div className={`push-toggle ${pushEnabled ? 'active' : ''}`} onClick={handleTogglePush}>
-                         <div className="toggle-handle"></div>
-                      </div>
                    </div>
                 </div>
 
