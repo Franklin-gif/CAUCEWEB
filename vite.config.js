@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       includeAssets: ['favicon.ico', 'logo.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'CAUCE WEB',
@@ -17,19 +18,32 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         start_url: '/?pwa=true',
+        id: '/?pwa=true',
         orientation: 'portrait-primary',
         icons: [
           {
-            src: 'logo.png',
+            src: '/logo.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
           },
           {
-            src: 'logo.png',
+            src: '/logo.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: '/logo.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }
