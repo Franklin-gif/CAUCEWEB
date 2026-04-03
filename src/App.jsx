@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import './App.css'
 import HomeController from './modules/home/controllers/HomeController'
 import AppController from './modules/app/controllers/AppController'
