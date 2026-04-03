@@ -15,11 +15,13 @@ function App() {
   return (
     <>
       {view === 'landing' ? (
-        <HomeController onEnterApp={() => setView('app')} />
+        <>
+          <HomeController onEnterApp={() => setView('app')} />
+          <ChatBot />
+        </>
       ) : (
         <AppController onExitApp={() => setView('landing')} />
       )}
-      <ChatBot />
     </>
   );
 }
