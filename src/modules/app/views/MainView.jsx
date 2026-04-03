@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../../../firebase';
+import { db, messaging } from '../../../firebase';
+import { getToken, onMessage } from 'firebase/messaging';
 import { ref, onValue, set, update, remove, push } from 'firebase/database'; // Realtime SDK
 import '../styles/AppStyles.css';
 
@@ -41,6 +42,61 @@ const MainView = ({ user, onLogout }) => {
   });
 
   const isAdmin = user?.isAdmin || user?.email === 'caucepanama@gmail.com';
+
+  // -- Configuración de Notificaciones FCM --
+  useEffect(() => {
+    if (!user) return;
+
+    const requestPermission = async () => {
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          // Obtener el Token (Reemplazar con tu VAPID KEY de Firebase Console)
+          const token = await getToken(messaging, { 
+            vapidKey: 'BGHcHLFIn92i77vP0bQx7sD0hS9W7xYz3N7tA6m9o2G5Yl9K8V1W0Q-4_r5mX9_z' // PLACEHOLDER
+          });
+          
+          if (token) {
+            // Guardar token en Firebase para que el admin pueda notificar
+            await update(ref(db, `users/${user.uid}`), { fcmToken: token });
+            // También guardamos en una lista global para broadcasts fáciles
+            await set(ref(db, `fcm_tokens/${user.uid}`), token);
+          }
+        }
+      } catch (error) {
+        console.error("Error al configurar notificaciones:", error);
+      }
+    };
+
+    requestPermission();
+
+    // Listener para mensajes en primer plano (cuando la app está abierta)
+    const unsubscribeExtras = onMessage(messaging, (payload) => {
+      console.log('Mensaje en primer plano:', payload);
+      showAlert(`🔔 ${payload.notification.title}: ${payload.notification.body}`, 'success');
+    });
+
+    return () => unsubscribeExtras();
+  }, [user]);
+
+  // -- Broadcast de Notificaciones (Simulado por ahora via RTDB) --
+  // En un entorno real, esto dispararía una Cloud Function.
+  // Por ahora, el admin escribirá en un nodo que los clientes "vigilan"
+  // Pero para que llegue al móvil CERRADO, se necesita que el admin llame a la API de FCM 
+  // o que una Cloud Function detecte el cambio en la base de datos.
+  
+  const sendPushNotification = async (title, body) => {
+     // Esta función se usará desde el admin para avisar a todos.
+     // Como no tenemos un servidor Node intermedio, registramos el "evento"
+     // para que una Cloud Function (que implementaremos luego) lo envíe.
+     const notifRef = push(ref(db, 'pending_notifications'));
+     await set(notifRef, {
+        title,
+        body,
+        timestamp: new Date().toISOString(),
+        status: 'pending'
+     });
+  };
 
   // 1. Suscripcin a Tareas (Realtime)
   useEffect(() => {
@@ -156,6 +212,8 @@ const MainView = ({ user, onLogout }) => {
            createdAt: new Date().toISOString()
         });
         showAlert('Nueva tarea publicada correctamente');
+        // Notificar a todos
+        sendPushNotification("¡Nueva Tarea!", `Se ha publicado: ${p.name} (${p.title})`);
       }
       setNewTask({ title: '', description: '', requiresPhoto: false, requiresVideo: false, visible: true });
     } catch (err) { showAlert("Error al guardar tarea", "error"); }
@@ -163,7 +221,15 @@ const MainView = ({ user, onLogout }) => {
   };
 
   const toggleVisibility = async (id, currentVal) => {
-    await update(ref(db, `tasks/${id}`), { visible: !currentVal });
+    const newVal = !currentVal;
+    await update(ref(db, `tasks/${id}`), { visible: newVal });
+    if (newVal) {
+       // Obtener detalles de la tarea para la notificación
+       const task = appTasks.find(t => t.id === id);
+       if (task) {
+          sendPushNotification("Tarea Disponible", `La jornada ${task.name} ya está habilitada.`);
+       }
+    }
   };
 
   const deleteTask = (id) => { 

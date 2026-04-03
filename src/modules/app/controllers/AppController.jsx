@@ -27,10 +27,12 @@ const AppController = ({ onExitApp }) => {
              setUser({ uid: u.uid, email: u.email, ...profile, isAdmin: isPrivileged });
              setMode('dashboard');
           } else {
-             // Si el perfil existe pero no esta aceptado, lo mandamos a la pantalla de evaluacion
-             await signOut(auth);
-             setUser(null);
-             setMode('pending-evaluation');
+             // Si el perfil existe pero no esta aceptado, y no estamos en registro, lo mandamos a la evaluacion
+             if (mode !== 'register') {
+                await signOut(auth);
+                setUser(null);
+                setMode('pending-evaluation');
+             }
           }
         } catch (e) {
           console.error("Auth Failure:", e);

@@ -54,7 +54,9 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
       };
 
       await set(ref(db, `users/${userId}`), userProfile);
-      // No cerramos sesión aquí manually, dejamos que el controlador lo detecte y muestre PendingView
+      // Cerramos sesión manualmente aquí y avisamos al controlador para mostrar PendingView
+      await signOut(auth);
+      onModeChange('pending-evaluation');
     } catch (err) {
       console.error("Register Error:", err);
       if (err.code === 'auth/email-already-in-use') {
@@ -89,7 +91,9 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
         };
 
         await set(ref(db, `users/${googleUser.uid}`), userProfile);
-        // Igual que arriba, el controlador tomará el mando.
+        // Igual que arriba, cerramos sesión y mandamos a espera
+        await signOut(auth);
+        onModeChange('pending-evaluation');
       }
     } catch (err) {
       console.error("Google Auth Error:", err);
