@@ -2,11 +2,24 @@ import React, { useEffect, useState } from 'react';
 import heroImg from '/src/assets/images/hero.png';
 import logoImg from '/src/assets/images/logo.png';
 
-const HomeView = ({ data, members, onEnterApp }) => {
+const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
     const [selectedMember, setSelectedMember] = useState(null);
     const [showPwaTutorial, setShowPwaTutorial] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [pwaDevice, setPwaDevice] = useState(null); // 'ios' or 'android'
+
+    const handlePlataformaClick = async () => {
+        // Si tenemos el evento de instalación de Chrome (Android)
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User installation choice: ${outcome}`);
+            // No reseteamos el prompt aquí, dejamos que el ciclo de vida lo maneje
+        } else {
+            // Si es iOS o no hay evento, mostramos el tutorial
+            setShowPwaTutorial(true);
+        }
+    };
 
     useEffect(() => {
         // Detectar dispositivo para tutorial PWA predeterminado
@@ -47,7 +60,7 @@ const HomeView = ({ data, members, onEnterApp }) => {
                             <a href="#componentes" onClick={() => setMenuOpen(false)}>Componentes</a>
                             <a href="#capacitacion" onClick={() => setMenuOpen(false)}>Capacitación</a>
                             <a href="#preguntas" onClick={() => setMenuOpen(false)}>Preguntas</a>
-                            <button className="nav-cta" onClick={() => setShowPwaTutorial(true)}>Plataforma</button>
+                            <button className="nav-cta" onClick={handlePlataformaClick}>Plataforma</button>
                         </div>
                         <div className={`mobile-menu-btn ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(!menuOpen)}>
                             <span></span>
@@ -247,7 +260,13 @@ const HomeView = ({ data, members, onEnterApp }) => {
                     </div>
 
                     <div className="pwa-footer-btns">
-                        <button className="btn-primary" onClick={onEnterApp}>
+                        <button className="btn-primary" onClick={async () => {
+                             if (deferredPrompt) {
+                                 deferredPrompt.prompt();
+                                 await deferredPrompt.userChoice;
+                             }
+                             onEnterApp();
+                        }}>
                             CONTINUAR A LA PLATAFORMA →
                         </button>
                     </div>
