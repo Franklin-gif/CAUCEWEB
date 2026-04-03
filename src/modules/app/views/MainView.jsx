@@ -41,6 +41,7 @@ const MainView = ({ user, onLogout }) => {
     handle: user?.handle || user?.uid?.substring(0,6) 
   });
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
 
   const isAdmin = user?.isAdmin || user?.email === 'caucepanama@gmail.com';
 
@@ -75,6 +76,17 @@ const MainView = ({ user, onLogout }) => {
        }
     });
  };
+
+  const handleTestPush = async () => {
+     if (!pushEnabled || pushEnabled === 'denied') {
+        showAlert("Primero debes activar las notificaciones en Configuración.", "error");
+        return;
+     }
+     setTestLoading(true);
+     await sendPushNotification("Prueba de CAUCE 🔔", "¡Genial! Tu dispositivo está recibiendo notificaciones push correctamente.");
+     setTestLoading(false);
+     showAlert("Enviando notificación de prueba...");
+  };
 
   // -- Envío de Notificaciones Push vía OneSignal REST API --
   const sendPushNotification = async (title, body) => {
@@ -411,6 +423,19 @@ const MainView = ({ user, onLogout }) => {
               <p style={{color: 'var(--text-muted)', marginBottom: '0.25rem'}}>@{userHandle}</p>
               <p style={{fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600}}>{userEmail}</p>
               <p style={{fontSize: '0.85rem', marginTop: '1rem'}}>{userProvince || 'Productor CAUCE'}</p>
+            </div>
+
+            <div className="test-push-container" style={{marginTop: '2.5rem', width: '100%', borderTop: '1px solid #f1f5f9', paddingTop: '2rem'}}>
+               <button 
+                  className={`btn-test-push ${testLoading ? 'loading' : ''}`}
+                  onClick={handleTestPush}
+                  disabled={testLoading}
+               >
+                  {testLoading ? 'Enviando...' : '🔔 PROBAR NOTIFICACIÓN'}
+               </button>
+               <p style={{fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.75rem', textAlign: 'center'}}>
+                  Se enviará un aviso de prueba a todos tus dispositivos suscritos.
+               </p>
             </div>
           </div>
         )}

@@ -3375,3 +3375,28 @@
 .push-toggle:active .toggle-handle {
   width: 28px;
 }
+
+.btn-test-push {
+  width: 100%;
+  padding: 1rem;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--rad-md);
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-test-push:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #f0f7f0;
+  transform: translateY(-2px);
+}
+
+.btn-test-push.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
