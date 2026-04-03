@@ -20,7 +20,7 @@ function App() {
           <ChatBot />
         </>
       ) : (
-        <AppController onExitApp={() => setView('landing')} />
+        <AppController onExitApp={() => isPwa ? setView('app') : setView('landing')} />
       )}
     </>
   );
