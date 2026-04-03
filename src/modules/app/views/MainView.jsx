@@ -40,62 +40,70 @@ const MainView = ({ user, onLogout }) => {
     province: user?.province, 
     handle: user?.handle || user?.uid?.substring(0,6) 
   });
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   const isAdmin = user?.isAdmin || user?.email === 'caucepanama@gmail.com';
 
-  // -- Configuración de Notificaciones FCM --
+  // -- Configuración de Notificaciones OneSignal --
   useEffect(() => {
-    if (!user) return;
+    if (!user || !window.OneSignalDeferred) return;
 
-    const requestPermission = async () => {
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          // Obtener el Token (Reemplazar con tu VAPID KEY de Firebase Console)
-          const token = await getToken(messaging, { 
-            vapidKey: 'BGHcHLFIn92i77vP0bQx7sD0hS9W7xYz3N7tA6m9o2G5Yl9K8V1W0Q-4_r5mX9_z' // PLACEHOLDER
-          });
-          
-          if (token) {
-            // Guardar token en Firebase para que el admin pueda notificar
-            await update(ref(db, `users/${user.uid}`), { fcmToken: token });
-            // También guardamos en una lista global para broadcasts fáciles
-            await set(ref(db, `fcm_tokens/${user.uid}`), token);
-          }
-        }
-      } catch (error) {
-        console.error("Error al configurar notificaciones:", error);
-      }
-    };
-
-    requestPermission();
-
-    // Listener para mensajes en primer plano (cuando la app está abierta)
-    const unsubscribeExtras = onMessage(messaging, (payload) => {
-      console.log('Mensaje en primer plano:', payload);
-      showAlert(`🔔 ${payload.notification.title}: ${payload.notification.body}`, 'success');
+    window.OneSignalDeferred.push(async function(OneSignal) {
+      // Vincular el ID de Firebase con OneSignal para seguimiento
+      await OneSignal.login(user.uid);
+      setPushEnabled(OneSignal.Notifications.permission);
+      
+      // Escuchar cambios de permiso
+      OneSignal.Notifications.addEventListener("permissionChange", (permission) => {
+         setPushEnabled(permission);
+      });
     });
-
-    return () => unsubscribeExtras();
   }, [user]);
 
-  // -- Broadcast de Notificaciones (Simulado por ahora via RTDB) --
-  // En un entorno real, esto dispararía una Cloud Function.
-  // Por ahora, el admin escribirá en un nodo que los clientes "vigilan"
-  // Pero para que llegue al móvil CERRADO, se necesita que el admin llame a la API de FCM 
-  // o que una Cloud Function detecte el cambio en la base de datos.
-  
+  const handleTogglePush = async () => {
+    if (!window.OneSignalDeferred) return;
+    
+    window.OneSignalDeferred.push(async function(OneSignal) {
+       if (!pushEnabled) {
+          const result = await OneSignal.Notifications.requestPermission();
+          if (result) setPushEnabled(true);
+       } else {
+          // Desactivar recibimiento de notificaciones
+          await OneSignal.User.PushSubscription.optOut();
+          setPushEnabled(false);
+          showAlert("Notificaciones desactivadas en este dispositivo.");
+       }
+    });
+ };
+
+  // -- Envío de Notificaciones Push vía OneSignal REST API --
   const sendPushNotification = async (title, body) => {
-     // Esta función se usará desde el admin para avisar a todos.
-     // Como no tenemos un servidor Node intermedio, registramos el "evento"
-     // para que una Cloud Function (que implementaremos luego) lo envíe.
-     const notifRef = push(ref(db, 'pending_notifications'));
-     await set(notifRef, {
-        title,
-        body,
-        timestamp: new Date().toISOString(),
-        status: 'pending'
-     });
+     try {
+        const response = await fetch('https://onesignal.com/api/v1/notifications', {
+           method: 'POST',
+           headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Authorization': 'Basic os_v2_app_unclmmphvrhs7nxltm4uswb7davnvdk4w3oe6nvx7t2pfh4eshywp4f6oe3cg7thyuv2ksorf6tqqxwbsaf3vq7zbvncc2pjp55rgxa'
+           },
+           body: JSON.stringify({
+              app_id: "a344b631-e7ac-4f2f-b6eb-9b3949583f18",
+              included_segments: ["All"], // Enviar a todos los suscritos
+              headings: { "en": title, "es": title },
+              contents: { "en": body, "es": body },
+              url: "https://caucepanama.online" // Opcional: URL al tocar la notificación
+           })
+        });
+        
+        const data = await response.json();
+        console.log("Notificación enviada con éxito:", data);
+        
+        // También guardamos rastro en Realtime para el historial (Opcional)
+        const notifRef = push(ref(db, 'notifications_history'));
+        await set(notifRef, { title, body, timestamp: new Date().toISOString() });
+     } catch (error) {
+        console.error("Error al enviar notificación push:", error);
+        showAlert("Error al enviar notificación remota", "error");
+     }
   };
 
   // 1. Suscripcin a Tareas (Realtime)
@@ -490,6 +498,19 @@ const MainView = ({ user, onLogout }) => {
                    <div className="input-field">
                       <label>Correo Electrónico</label>
                       <input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} readOnly={!isEditingProfile} className={!isEditingProfile ? 'field-locked' : ''} />
+                   </div>
+                </div>
+
+                <div className="app-preferences-section">
+                   <h3>Preferencias de la App (PWA)</h3>
+                   <div className="preference-item card-action">
+                      <div className="pref-info">
+                         <strong>Notificaciones Push</strong>
+                         <p>Recibe avisos sobre nuevas jornadas y tareas.</p>
+                      </div>
+                      <div className={`push-toggle ${pushEnabled ? 'active' : ''}`} onClick={handleTogglePush}>
+                         <div className="toggle-handle"></div>
+                      </div>
                    </div>
                 </div>
 
