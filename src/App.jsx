@@ -6,7 +6,11 @@ import AppController from './modules/app/controllers/AppController'
 import ChatBot from './modules/app/components/chatbot/ChatBot'
 
 function App() {
-  const [view, setView] = useState('landing') // 'landing' or 'app'
+  // Detectar si la app viene de la PWA (start_url o modo standalone)
+  const isPwa = window.matchMedia('(display-mode: standalone)').matches || 
+                new URLSearchParams(window.location.search).get('pwa') === 'true';
+
+  const [view, setView] = useState(isPwa ? 'app' : 'landing'); // Iniciar en app si es PWA
 
   return (
     <>
@@ -17,7 +21,7 @@ function App() {
       )}
       <ChatBot />
     </>
-  )
+  );
 }
 
 export default App
