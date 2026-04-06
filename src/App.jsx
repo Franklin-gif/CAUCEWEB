@@ -10,6 +10,15 @@ function App() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
+      // Solo permitir instalación en dispositivos móviles (Android/iOS)
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
+      if (!isMobile) {
+        // En computadora, prevenimos la instalación y no guardamos el prompt
+        e.preventDefault();
+        return;
+      }
+
       // Prevenir que el navegador muestre su propio banner de instalación
       e.preventDefault();
       // Guardar el evento para dispararlo más tarde

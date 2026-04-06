@@ -9,14 +9,23 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
     const [pwaDevice, setPwaDevice] = useState(null); // 'ios' or 'android'
 
     const handlePlataformaClick = async () => {
-        // Si tenemos el evento de instalación de Chrome (Android)
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // Si es computadora, entramos directo a la plataforma
+        if (!isMobile) {
+            onEnterApp();
+            return;
+        }
+
+        // Si es móvil y tenemos el evento de instalación (Andorid)
         if (deferredPrompt) {
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
             console.log(`User installation choice: ${outcome}`);
-            // No reseteamos el prompt aquí, dejamos que el ciclo de vida lo maneje
+            // Después de intentar la instalación, entramos a la app
+            onEnterApp();
         } else {
-            // Si es iOS o no hay evento, mostramos el tutorial
+            // Si es iOS o móvil sin evento, mostramos el tutorial
             setShowPwaTutorial(true);
         }
     };
