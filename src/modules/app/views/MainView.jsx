@@ -31,9 +31,13 @@ const MainView = ({ user, onLogout }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoLoading, setPhotoLoading] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [tempUploads, setTempUploads] = useState({ photo: null, video: null, photoUrl: null, videoUrl: null });
+  const [tempUploads, setTempUploads] = useState([]); // Array of { url, type }
   const [customAlert, setCustomAlert] = useState(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [activeUserMenu, setActiveUserMenu] = useState(null);
+  const [selectedEvaluationSubmission, setSelectedEvaluationSubmission] = useState(null);
+  const [evalFeedback, setEvalFeedback] = useState('');
+  const [evalRating, setEvalRating] = useState(0);
   const [lastSavedData, setLastSavedData] = useState({ 
     name: user?.name, 
     email: user?.email, 
@@ -192,21 +196,42 @@ const MainView = ({ user, onLogout }) => {
     });
   };
 
-  const evaluateTask = async (submissionId, score) => {
+  const submitRating = async () => {
+    if (!selectedEvaluationSubmission || !evalRating) {
+      showAlert("Por favor selecciona una calificación", "warning");
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      await update(ref(db, `submissions/${submissionId}`), {
-         status: 'evaluated', 
-         score, 
-         adminComment: adminComment || '¡Buen trabajo!' 
+      await update(ref(db, `submissions/${selectedEvaluationSubmission.id}`), {
+        status: 'evaluated',
+        adminComment: evalFeedback || '¡Excelente trabajo!',
+        score: evalRating
       });
-      setAdminComment(''); showAlert('Evaluación enviada');
+      showAlert("Evaluación enviada con éxito");
+      setSelectedEvaluationSubmission(null);
+      setEvalFeedback('');
+      setEvalRating(0);
     } catch (e) { showAlert("Error al evaluar", "error"); }
+    finally { setIsSubmitting(false); }
   };
 
   const updateUserStatus = async (uid, newStatus) => {
     await update(ref(db, `users/${uid}`), { status: newStatus });
-    showAlert(`Usuario ${newStatus === 'accepted' ? 'Aprobado' : 'Denegado'}`);
+    const statusMap = { 'accepted': 'Aprobado', 'denied': 'Denegado', 'pending': 'Inactivado' };
+    showAlert(`Usuario ${statusMap[newStatus] || newStatus}`);
   };
+
+  const deleteUser = (uid) => {
+    showConfirm('¿Estás seguro de que deseas eliminar permanentemente a este usuario y todos sus datos? Esta acción es irreversible.', async () => {
+      try {
+        await remove(ref(db, `users/${uid}`));
+        showAlert("Usuario eliminado definitivamente");
+      } catch (err) { showAlert("Error al eliminar", "error"); }
+      setCustomAlert(null);
+    });
+  }
+
 
   // --- Operaciones de Usuario (Realtime) ---
   const handleFileChange = async (e, type) => {
@@ -221,13 +246,18 @@ const MainView = ({ user, onLogout }) => {
       const res = await fetch(`https://api.cloudinary.com/v1_1/dhxaodqr9/upload`, { method: 'POST', body: formData });
       const data = await res.json();
       if (data.secure_url) {
-        setTempUploads(prev => ({ ...prev, [`${type}Url`]: data.secure_url }));
+        setTempUploads(prev => [...prev, { url: data.secure_url, type }]);
       } else { throw new Error("Upload failed"); }
     } catch (error) { showAlert("Error al subir a Cloudinary.", "error"); }
     finally { setIsSubmitting(false); }
   };
 
+  const removeTempFile = (index) => {
+    setTempUploads(prev => prev.filter((_, i) => i !== index));
+  };
+
   const submitTask = async (taskId, taskTitle) => {
+    if (tempUploads.length === 0) return;
     setIsSubmitting(true);
     try {
       const newSubRef = push(ref(db, 'submissions'));
@@ -239,12 +269,23 @@ const MainView = ({ user, onLogout }) => {
         status: 'pending',
         score: 0,
         date: new Date().toLocaleDateString(),
-        evidence: { ...tempUploads },
+        evidence: tempUploads,
         createdAt: new Date().toISOString()
       });
       setSubmitSuccess(true);
     } catch (e) { showAlert("Error al enviar tarea", "error"); }
     finally { setIsSubmitting(false); }
+  };
+
+  const undoSubmission = async (submissionId) => {
+    showConfirm('¿Deseas anular esta entrega para editarla? Podrás volver a subir archivos y entregarla de nuevo.', async () => {
+      try {
+        await remove(ref(db, `submissions/${submissionId}`));
+        setSubmitSuccess(false);
+        showAlert("Entrega anulada. Puedes editarla ahora.");
+      } catch (err) { showAlert("Error al anular entrega", "error"); }
+      setCustomAlert(null);
+    });
   };
 
   const handleProfilePhotoChange = async (e) => {
@@ -280,7 +321,7 @@ const MainView = ({ user, onLogout }) => {
   const handleModalClose = () => {
     setSelectedDashboardJornada(null); 
     setSubmitSuccess(false);
-    setTempUploads({ photo: null, video: null, photoUrl: null, videoUrl: null });
+    setTempUploads([]);
     setIsSubmitting(false);
   };
 
@@ -462,45 +503,41 @@ const MainView = ({ user, onLogout }) => {
 
         {activeTab === 'admin' && adminSubTab === 'evaluacion' && (
           <div className="admin-section-modern">
-             <h2 className="section-title">Tareas por Revisar</h2>
-             <div className="eval-grid">
+             <div className="section-header-flex">
+                <h2 className="section-title">Tareas por Revisar</h2>
+                <span className="pending-counter">
+                   {submissions.filter(s => s.status === 'pending').length} pendientes
+                </span>
+             </div>
+
+             <div className="eval-list-modern">
+                {submissions.filter(s => s.status === 'pending').length === 0 && (
+                   <div className="empty-state-eval">
+                      <p>✨ Todo al día. No hay tareas por revisar.</p>
+                   </div>
+                )}
                 {submissions.filter(s => s.status === 'pending').map(sub => (
-                   <div key={sub.id} className="admin-card-modern">
-                      <div className="admin-card-header">
-                         <div className="user-info-mini">
-                            <span className="user-avatar">👤</span>
-                            <div>
-                               <p className="user-name-small">{sub.farmerName}</p>
-                               <p className="sub-meta-small">{sub.taskTitle} - {sub.date}</p>
-                            </div>
+                   <div key={sub.id} className="eval-row-modern" onClick={() => {
+                      setSelectedEvaluationSubmission(sub);
+                      setEvalFeedback('');
+                      setEvalRating(0);
+                   }}>
+                      <div className="eval-user-block">
+                         <div className="eval-avatar-mini">👤</div>
+                         <div className="eval-user-meta">
+                            <strong>{sub.farmerName}</strong>
+                            <span>Participante CAUCE</span>
                          </div>
-                         <span className="pending-badge">Pendiente</span>
                       </div>
-                      <div className="evidence-container-modern">
-                         {sub.evidence?.photoUrl && (
-                            <div className="evidence-thumbnail clickable" onClick={() => window.open(sub.evidence.photoUrl)}>
-                               <img src={sub.evidence.photoUrl} alt="Sub" />
-                               <span className="evidence-label">VER FOTO</span>
-                            </div>
-                         )}
-                         {sub.evidence?.videoUrl && (
-                            <div className="evidence-video-card">
-                               <video controls><source src={sub.evidence.videoUrl} /></video>
-                               <span className="evidence-label">VER VIDEO</span>
-                            </div>
-                         )}
+                      <div className="eval-task-block">
+                         <p className="task-name-eval">{sub.taskTitle}</p>
+                         <p className="task-date-eval">{sub.date}</p>
                       </div>
-                      <div className="rating-actions-modern">
-                         <textarea placeholder="Añadir feedback para el productor..." value={adminComment} onChange={(e) => setAdminComment(e.target.value)} />
-                         <div className="star-rating-modern">
-                            {[1,2,3,4,5].map(star => (
-                               <button key={star} className="star-btn" onClick={() => evaluateTask(sub.id, star)}>⭐</button>
-                            ))}
-                         </div>
+                      <div className="eval-action-block">
+                         <button className="btn-review-professional">REVISAR</button>
                       </div>
                    </div>
                 ))}
-                {submissions.filter(s => s.status === 'pending').length === 0 && <p style={{textAlign: 'center', opacity: 0.5}}>No hay tareas pendientes de revisión.</p>}
              </div>
           </div>
         )}
@@ -570,27 +607,66 @@ const MainView = ({ user, onLogout }) => {
                 </div>
              </div>
 
-             <div className="eval-grid">
+             <div className="eval-grid" onClick={() => activeUserMenu && setActiveUserMenu(null)}>
                 {allUsers.filter(u => (u.status || 'pending') === memberFilter).length === 0 && (
                    <p className="empty-state">No hay usuarios en esta categoría.</p>
                 )}
-                {allUsers.filter(u => (u.status || 'pending') === memberFilter).map(u => (
+                {allUsers.filter(u => (u.status || 'pending') === memberFilter).map((u, index) => (
                    <div key={u.id} className="admin-card-modern">
                       <div className="admin-card-header">
                          <div className="user-info-mini">
-                            <div className="user-avatar">{u.photoUrl ? <img src={u.photoUrl} alt="U" style={{width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover'}} /> : (u.name?.[0] || 'U')}</div>
+                            <span className="user-row-number">{index + 1}</span>
+                            <div className="user-avatar">{u.photoUrl ? <img src={u.photoUrl} alt="U" /> : (u.name?.[0] || 'U')}</div>
                             <div>
                                <div className="user-name-small">{u.name || 'Participante'}</div>
                                <div className="sub-meta-small">{u.email}</div>
                             </div>
                          </div>
-                         <span className={`status-tag ${u.status || 'pending'}`}>{u.status || 'pending'}</span>
                       </div>
-                      <div className="member-actions-ui">
-                         {memberFilter !== 'accepted' && <button className="btn-approve-ui" onClick={() => updateUserStatus(u.id, 'accepted')}>APROBAR</button>}
-                         {memberFilter !== 'denied' && <button className="btn-deny-ui" onClick={() => updateUserStatus(u.id, 'denied')}>RECHAZAR</button>}
-                         {memberFilter === 'accepted' && <button className="btn-deny-ui" onClick={() => updateUserStatus(u.id, 'denied')}>X</button>}
-                      </div>
+
+                      {memberFilter === 'pending' ? (
+                        <div className="pending-actions-ui">
+                           <button className="btn-icon-action approve" title="Aprobar" onClick={(e) => { e.stopPropagation(); updateUserStatus(u.id, 'accepted'); }}>
+                              ✓
+                           </button>
+                           <button className="btn-icon-action reject" title="Rechazar" onClick={(e) => { e.stopPropagation(); updateUserStatus(u.id, 'denied'); }}>
+                              ✕
+                           </button>
+                        </div>
+                      ) : (
+                        <div className="menu-container-ui">
+                           <button className="btn-dots-ui" onClick={(e) => {
+                             e.stopPropagation();
+                             setActiveUserMenu(activeUserMenu === u.id ? null : u.id);
+                           }}>
+                             ⋮
+                           </button>
+                           {activeUserMenu === u.id && (
+                             <div className="dropdown-menu-ui" onClick={(e) => e.stopPropagation()}>
+                                {memberFilter === 'accepted' && (
+                                  <>
+                                    <button className="dropdown-item-ui" onClick={() => { updateUserStatus(u.id, 'pending'); setActiveUserMenu(null); }}>
+                                       <span>⏳</span> Inactivar
+                                    </button>
+                                    <button className="dropdown-item-ui danger" onClick={() => { updateUserStatus(u.id, 'denied'); setActiveUserMenu(null); }}>
+                                       <span>🚫</span> Rechazar
+                                    </button>
+                                  </>
+                                )}
+                                {memberFilter === 'denied' && (
+                                  <>
+                                    <button className="dropdown-item-ui" onClick={() => { updateUserStatus(u.id, 'accepted'); setActiveUserMenu(null); }}>
+                                       <span>🔄</span> Reactivar usuario
+                                    </button>
+                                    <button className="dropdown-item-ui danger" onClick={() => { deleteUser(u.id); setActiveUserMenu(null); }}>
+                                       <span>🗑️</span> Borrar usuario
+                                    </button>
+                                  </>
+                                )}
+                             </div>
+                           )}
+                        </div>
+                      )}
                    </div>
                 ))}
              </div>
@@ -615,20 +691,29 @@ const MainView = ({ user, onLogout }) => {
                          </div>
                          <div className="hist-date">{sub.date}</div>
                       </div>
-                      {sub.evidence && (Object.values(sub.evidence).some(v => v)) && (
+                      {sub.evidence && (Array.isArray(sub.evidence) ? sub.evidence.length > 0 : Object.values(sub.evidence).some(v => v)) && (
                          <div className="hist-evidence-preview">
                             <div className="evidence-container-modern">
-                               {sub.evidence?.photoUrl && (
-                                  <div className="evidence-thumbnail clickable" onClick={() => window.open(sub.evidence.photoUrl)}>
-                                     <img src={sub.evidence.photoUrl} alt="E" />
-                                     <span className="evidence-label">FOTO</span>
+                               {Array.isArray(sub.evidence) ? sub.evidence.map((file, idx) => (
+                                  <div key={idx} className="evidence-thumbnail clickable" onClick={() => window.open(file.url)}>
+                                     {file.type === 'photo' ? <img src={file.url} alt="E" /> : <video src={file.url} />}
+                                     <span className="evidence-label">{file.type === 'photo' ? 'FOTO' : 'VIDEO'}</span>
                                   </div>
-                               )}
-                               {sub.evidence?.videoUrl && (
-                                  <div className="evidence-video-card" onClick={() => window.open(sub.evidence.videoUrl)}>
-                                     <video src={sub.evidence.videoUrl} />
-                                     <span className="evidence-label">VIDEO</span>
-                                  </div>
+                               )) : (
+                                  <>
+                                     {sub.evidence?.photoUrl && (
+                                        <div className="evidence-thumbnail clickable" onClick={() => window.open(sub.evidence.photoUrl)}>
+                                           <img src={sub.evidence.photoUrl} alt="E" />
+                                           <span className="evidence-label">FOTO</span>
+                                        </div>
+                                     )}
+                                     {sub.evidence?.videoUrl && (
+                                        <div className="evidence-video-card" onClick={() => window.open(sub.evidence.videoUrl)}>
+                                           <video src={sub.evidence.videoUrl} />
+                                           <span className="evidence-label">VIDEO</span>
+                                        </div>
+                                     )}
+                                  </>
                                )}
                             </div>
                             {sub.adminComment && (
@@ -672,53 +757,91 @@ const MainView = ({ user, onLogout }) => {
 
                      <section className="prof-section-ui">
                         <h4 className="prof-label-ui">Mi trabajo</h4>
-                        {!submitSuccess && !mySubmissions.find(s => s.taskId === selectedDashboardJornada.id) ? (
-                           <div className="work-upload-area">
-                              <div className="upload-options-ui">
-                                 {selectedDashboardJornada.requiresPhoto && (
-                                    <label className={`file-upload-row ${tempUploads.photoUrl ? 'file-ready' : ''}`}>
-                                       <input type="file" onChange={e => handleFileChange(e, 'photo')} accept="image/*" />
-                                       <div className="file-icon-ui">🖼️</div>
-                                       <div className="file-info-ui">
-                                          <span className="file-name-ui">{tempUploads.photoUrl ? 'Foto cargada' : 'Adjuntar Foto de Evidencia'}</span>
-                                          <span className="file-size-ui">{tempUploads.photoUrl ? 'Listo para enviar' : 'Click para subir'}</span>
+                        {(() => {
+                           const submission = mySubmissions.find(s => s.taskId === selectedDashboardJornada.id);
+                           const hasSubmitted = !!submission || submitSuccess;
+
+                           if (!hasSubmitted) {
+                              return (
+                                 <div className="work-upload-area">
+                                    <div className="professional-upload-zone">
+                                       <div className="upload-controls-row">
+                                          <label className="btn-upload-choice">
+                                             <input type="file" onChange={e => handleFileChange(e, 'photo')} accept="image/*" />
+                                             <div className="choice-content">
+                                                <span className="icon">📸</span>
+                                                <span>Añadir Fotos</span>
+                                             </div>
+                                          </label>
+                                          <label className="btn-upload-choice">
+                                             <input type="file" onChange={e => handleFileChange(e, 'video')} accept="video/*" />
+                                             <div className="choice-content">
+                                                <span className="icon">🎥</span>
+                                                <span>Añadir Video</span>
+                                             </div>
+                                          </label>
                                        </div>
-                                       {tempUploads.photoUrl && <span className="check-file">✓</span>}
-                                    </label>
-                                 )}
-                                 {selectedDashboardJornada.requiresVideo && (
-                                    <label className={`file-upload-row ${tempUploads.videoUrl ? 'file-ready' : ''}`}>
-                                       <input type="file" onChange={e => handleFileChange(e, 'video')} accept="video/*" />
-                                       <div className="file-icon-ui">🎬</div>
-                                       <div className="file-info-ui">
-                                          <span className="file-name-ui">{tempUploads.videoUrl ? 'Video cargado' : 'Adjuntar Video de Evidencia'}</span>
-                                          <span className="file-size-ui">{tempUploads.videoUrl ? 'Listo para enviar' : 'Click para subir'}</span>
+
+                                       {tempUploads && tempUploads.length > 0 && (
+                                          <div className="file-gallery-preview">
+                                             <h5 className="gallery-title">Archivos seleccionados ({tempUploads.length})</h5>
+                                             <div className="gallery-grid">
+                                                {tempUploads.map((file, i) => (
+                                                   <div key={i} className="gallery-item-thumb">
+                                                      {file.type === 'photo' ? <img src={file.url} alt="P" /> : <video src={file.url} />}
+                                                      <button className="remove-file-btn" onClick={() => removeTempFile(i)}>×</button>
+                                                   </div>
+                                                ))}
+                                             </div>
+                                          </div>
+                                       )}
+                                       
+                                       <button className="btn-submit-professional" onClick={() => submitTask(selectedDashboardJornada.id, selectedDashboardJornada.title)} disabled={isSubmitting || !tempUploads || tempUploads.length === 0}>
+                                          {isSubmitting ? 'SUBIENDO...' : 'ENTREGAR TAREA'}
+                                       </button>
+                                    </div>
+                                 </div>
+                              );
+                           } else {
+                              const sub = submission || { evidence: tempUploads, status: 'pending' };
+                              return (
+                                 <div className="work-display-area">
+                                    <div className="success-banner-modern">
+                                       <div className="banner-text">
+                                          <strong>Entregada con éxito</strong>
+                                          <p>Tu tarea ha sido enviada para revisión.</p>
                                        </div>
-                                       {tempUploads.videoUrl && <span className="check-file">✓</span>}
-                                    </label>
-                                 )}
-                              </div>
-                              <button className="btn-submit-professional" onClick={() => submitTask(selectedDashboardJornada.id, selectedDashboardJornada.title)} disabled={isSubmitting || (!tempUploads.photoUrl && !tempUploads.videoUrl)}>
-                                 {isSubmitting ? 'ENVIANDO...' : 'ENTREGAR TAREA'}
-                              </button>
-                           </div>
-                        ) : (
-                           <div className="work-display-area">
-                              <div className="success-banner-ui">Tarea entregada correctamente</div>
-                              {mySubmissions.find(s => s.taskId === selectedDashboardJornada.id)?.evidence?.photoUrl && (
-                                 <div className="submitted-file-row" onClick={() => window.open(mySubmissions.find(s => s.taskId === selectedDashboardJornada.id).evidence.photoUrl)}>
-                                    <div className="file-icon-ui">🖼️</div>
-                                    <span className="file-name-ui">Evidencia_Imagen.jpg</span>
+                                       {sub.status === 'pending' && (
+                                          <button className="btn-undo-submission" onClick={() => undoSubmission(sub.id)}>ANULAR ENTREGA</button>
+                                       )}
+                                    </div>
+                                    <div className="submitted-files-gallery">
+                                       {Array.isArray(sub.evidence) ? sub.evidence.map((file, idx) => (
+                                          <div key={idx} className="submitted-file-row horizontal" onClick={() => window.open(file.url)}>
+                                             <div className="file-icon-ui">{file.type === 'photo' ? '🖼️' : '🎬'}</div>
+                                             <span className="file-name-ui">Evidencia_{file.type === 'photo' ? 'Imagen' : 'Video'}_{idx+1}</span>
+                                          </div>
+                                       )) : (
+                                          <>
+                                             {sub.evidence?.photoUrl && (
+                                                <div className="submitted-file-row horizontal" onClick={() => window.open(sub.evidence.photoUrl)}>
+                                                   <div className="file-icon-ui">🖼️</div>
+                                                   <span className="file-name-ui">Evidencia_Imagen.jpg</span>
+                                                </div>
+                                             )}
+                                             {sub.evidence?.videoUrl && (
+                                                <div className="submitted-file-row horizontal" onClick={() => window.open(sub.evidence.videoUrl)}>
+                                                   <div className="file-icon-ui">🎬</div>
+                                                   <span className="file-name-ui">Evidencia_Video.mp4</span>
+                                                </div>
+                                             )}
+                                          </>
+                                       )}
+                                    </div>
                                  </div>
-                              )}
-                              {mySubmissions.find(s => s.taskId === selectedDashboardJornada.id)?.evidence?.videoUrl && (
-                                 <div className="submitted-file-row" onClick={() => window.open(mySubmissions.find(s => s.taskId === selectedDashboardJornada.id).evidence.videoUrl)}>
-                                    <div className="file-icon-ui">🎬</div>
-                                    <span className="file-name-ui">Evidencia_Video.mp4</span>
-                                 </div>
-                              )}
-                           </div>
-                        )}
+                              );
+                           }
+                        })()}
                      </section>
                   </div>
 
@@ -781,6 +904,85 @@ const MainView = ({ user, onLogout }) => {
            </div>
         </div>
       )}
+       {/* MODAL DE EVALUACIÓN PROFESIONAL */}
+       {selectedEvaluationSubmission && (
+          <div className="modal-overlay-dark" onClick={() => setSelectedEvaluationSubmission(null)}>
+             <div className="professional-modal glass eval-modal-width" onClick={e => e.stopPropagation()}>
+                <div className="prof-modal-header">
+                   <button className="back-btn-ui" onClick={() => setSelectedEvaluationSubmission(null)}>〈 Atrás</button>
+                   <div className="header-meta-ui">
+                      <span>⚖️</span> Evaluación Detallada
+                   </div>
+                   <button className="close-x-ui" onClick={() => setSelectedEvaluationSubmission(null)}>×</button>
+                </div>
+
+                <div className="prof-modal-layout">
+                   <div className="prof-left-col">
+                      <div className="eval-detail-user">
+                         <div className="eval-avatar-large">👤</div>
+                         <div>
+                            <h1 className="eval-user-name-large">{selectedEvaluationSubmission.farmerName}</h1>
+                            <p className="eval-task-subtitle">{selectedEvaluationSubmission.taskTitle}</p>
+                         </div>
+                      </div>
+
+                      <section className="prof-section-ui">
+                         <h4 className="prof-label-ui">Evidencias Enviadas</h4>
+                         <div className="eval-evidence-gallery">
+                            {Array.isArray(selectedEvaluationSubmission.evidence) ? selectedEvaluationSubmission.evidence.map((file, idx) => (
+                               <div key={idx} className="eval-evidence-item" onClick={() => window.open(file.url)}>
+                                  {file.type === 'photo' ? <img src={file.url} alt="E" /> : <video src={file.url} />}
+                                  <div className="eval-evidence-overlay">
+                                     <span>👁️ VER {file.type === 'photo' ? 'FOTO' : 'VIDEO'}</span>
+                                  </div>
+                               </div>
+                            )) : (
+                               <p className="empty-state">No hay archivos de evidencia.</p>
+                            )}
+                         </div>
+                      </section>
+                   </div>
+
+                   <div className="prof-right-col">
+                      <section className="prof-section-ui">
+                         <h4 className="prof-label-ui">Calificar Entrega</h4>
+                         <div className="eval-rating-container">
+                            <label className="sub-label-ui">Tu Feedback para el productor:</label>
+                            <textarea 
+                               className="eval-feedback-textarea"
+                               placeholder="Escribe aquí tus observaciones..."
+                               value={evalFeedback}
+                               onChange={(e) => setEvalFeedback(e.target.value)}
+                            />
+
+                            <label className="sub-label-ui" style={{marginTop: '1.5rem'}}>Selecciona la Calificación:</label>
+                            <div className="eval-stars-interactive">
+                               {[1,2,3,4,5].map(star => (
+                                  <button 
+                                     key={star} 
+                                     className={`eval-star-btn ${evalRating >= star ? 'active' : ''}`}
+                                     onClick={() => setEvalRating(star)}
+                                  >
+                                     ⭐
+                                  </button>
+                               ))}
+                            </div>
+
+                            <button 
+                               className="btn-submit-professional" 
+                               style={{marginTop: '2rem', width: '100%'}}
+                               onClick={submitRating}
+                               disabled={isSubmitting || evalRating === 0}
+                            >
+                               {isSubmitting ? 'ENVIANDO...' : 'CONFIRMAR EVALUACIÓN'}
+                            </button>
+                         </div>
+                      </section>
+                   </div>
+                </div>
+             </div>
+          </div>
+       )}
     </div>
   );
 };
