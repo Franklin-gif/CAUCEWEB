@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { googleProvider, auth, db } from '../../../firebase';
-import { ref, get } from 'firebase/database';
+import { ref, get, set } from 'firebase/database';
 import '../styles/AppStyles.css';
 
 const LoginView = ({ onAuth, onModeChange, onBack }) => {
@@ -72,8 +72,10 @@ const LoginView = ({ onAuth, onModeChange, onBack }) => {
       }
       // El controlador se encargará de verificar el status y redirigir
     } catch (err) {
-      console.error("Google Auth Error:", err);
-      setError("Error con Google.");
+      console.error("DEBUG - Google Auth Full Error:", err);
+      console.error("DEBUG - Error Code:", err.code);
+      console.error("DEBUG - Error Message:", err.message);
+      setError(`Error con Google: ${err.message || 'Error desconocido'}`);
       setIsLoading(false);
     }
   };

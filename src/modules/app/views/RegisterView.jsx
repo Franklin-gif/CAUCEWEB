@@ -96,8 +96,10 @@ const RegisterView = ({ onAuth, onModeChange, onBack }) => {
         onModeChange('pending-evaluation');
       }
     } catch (err) {
-      console.error("Google Auth Error:", err);
-      setError("Error con Google.");
+      console.error("DEBUG - Google Auth Full Error:", err);
+      console.error("DEBUG - Error Code:", err.code);
+      console.error("DEBUG - Error Message:", err.message);
+      setError(`Error con Google: ${err.message || 'Error desconocido'}`);
       setIsLoading(false);
     }
   };
