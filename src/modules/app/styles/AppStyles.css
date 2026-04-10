@@ -3685,3 +3685,19 @@
   }
 }
 
+
+/* Habilitar deslizamiento horizontal en pestaas de filtros (Mvil) */
+.status-filter-tabs {
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+  display: flex !important;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.status-filter-tabs::-webkit-scrollbar { 
+  display: none; 
+}
+.filter-tab { 
+  flex-shrink: 0 !important; 
+}
+
