@@ -3651,3 +3651,29 @@
 .eval-stars-interactive { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 .eval-star-btn { background: white; border: 1px solid #cbd5e1; font-size: 1.5rem; width: 44px; height: 44px; border-radius: 10px; cursor: pointer; transition: all 0.2s; filter: grayscale(1); opacity: 0.5; }
 .eval-star-btn.active { filter: grayscale(0); opacity: 1; background: #fffbeb; border-color: #fcd34d; transform: scale(1.1); }
+
+/* Botón de sincronización */
+.btn-refresh-sync {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.btn-refresh-sync:hover {
+  transform: rotate(180deg);
+  background: #f1f5f9;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.btn-refresh-sync:active {
+  transform: rotate(180deg) scale(0.9);
+}

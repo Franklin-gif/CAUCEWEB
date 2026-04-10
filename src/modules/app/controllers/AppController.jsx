@@ -27,8 +27,14 @@ const AppController = ({ onExitApp }) => {
              setUser({ uid: u.uid, email: u.email, ...profile, isAdmin: isPrivileged });
              setMode('dashboard');
           } else {
-             // Si el perfil existe pero no esta aceptado, y no estamos en registro, lo mandamos a la evaluacion
-             if (mode !== 'register') {
+             // Si el perfil no existe todavía (race condition o login inicial), o no esta aceptado
+             // Solo sacamos al usuario si no estamos en proceso de login o registro
+             if (mode !== 'register' && mode !== 'login') {
+                await signOut(auth);
+                setUser(null);
+                setMode('pending-evaluation');
+             } else if (snap.exists() && profile.status !== 'accepted') {
+                // Si el perfil existe pero está pendiente/denegado, si lo mandamos a evaluación
                 await signOut(auth);
                 setUser(null);
                 setMode('pending-evaluation');

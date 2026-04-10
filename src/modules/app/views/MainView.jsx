@@ -593,7 +593,29 @@ const MainView = ({ user, onLogout }) => {
         {activeTab === 'admin' && adminSubTab === 'miembros' && (
           <div className="admin-section-modern">
              <div className="section-header-flex">
-                <h2 className="section-title">Gestión de Usuarios</h2>
+                <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                   <h2 className="section-title" style={{margin: 0}}>Gestión de Usuarios</h2>
+                   <button 
+                      className="btn-refresh-sync" 
+                      onClick={() => {
+                        // Forzar una re-suscripción cambiando una clave de estado
+                        setMemberFilter(memberFilter); // Re-trigger visual local
+                        showAlert("Sincronizando con Firebase...");
+                        // En Realtime Database, onValue ya es síncrono, pero podemos 
+                        // forzar una lectura única si queremos estar 100% seguros
+                        get(ref(db, 'users')).then(snap => {
+                           if (snap.exists()) {
+                              const list = Object.keys(snap.val()).map(k => ({ id: k, ...snap.val()[k] }));
+                              setAllUsers(list.filter(u => u.email !== 'caucepanama@gmail.com'));
+                              showAlert("Lista de usuarios actualizada");
+                           }
+                        });
+                      }}
+                      title="Sincronizar ahora"
+                   >
+                      🔄
+                   </button>
+                </div>
                 <div className="status-filter-tabs">
                    <button className={`filter-tab ${memberFilter === 'pending' ? 'active' : ''}`} onClick={() => setMemberFilter('pending')}>
                       Pendientes <span>{allUsers.filter(u => (u.status || 'pending') === 'pending').length}</span>

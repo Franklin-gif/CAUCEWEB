@@ -51,8 +51,26 @@ const LoginView = ({ onAuth, onModeChange, onBack }) => {
     setIsLoading(true);
     setError(null);
     try {
-      await signInWithPopup(auth, googleProvider);
-      // El controlador se encarga de verificar el status
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+
+      // Verificar si el usuario ya existe en la base de datos
+      const snapshot = await get(ref(db, `users/${user.uid}`));
+      
+      if (!snapshot.exists()) {
+        // Si no existe, crear un perfil básico para que el admin pueda verlo
+        const newProfile = {
+          name: user.displayName || 'Nuevo Usuario Google',
+          email: user.email,
+          province: 'No especificada (Registro Google)',
+          isAdmin: false,
+          status: 'pending',
+          photoUrl: user.photoURL || null,
+          createdAt: new Date().toISOString()
+        };
+        await set(ref(db, `users/${user.uid}`), newProfile);
+      }
+      // El controlador se encargará de verificar el status y redirigir
     } catch (err) {
       console.error("Google Auth Error:", err);
       setError("Error con Google.");
