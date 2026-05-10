@@ -7,6 +7,7 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
     const [showPwaTutorial, setShowPwaTutorial] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [pwaDevice, setPwaDevice] = useState(null); // 'ios' or 'android'
+    const [selectedJornada, setSelectedJornada] = useState(null);
 
     const handlePlataformaClick = async () => {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -41,7 +42,7 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
             for (let i = 0; i < reveals.length; i++) {
                 const windowHeight = window.innerHeight;
                 const elementTop = reveals[i].getBoundingClientRect().top;
-                const elementVisible = 150;
+                const elementVisible = 100;
                 if (elementTop < windowHeight - elementVisible) {
                     reveals[i].classList.add("active");
                 }
@@ -53,6 +54,101 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
         return () => window.removeEventListener("scroll", reveal);
     }, []);
 
+    useEffect(() => {
+        if (selectedMember || showPwaTutorial) {
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        };
+    }, [selectedMember, showPwaTutorial]);
+
+    if (selectedJornada) {
+        return (
+            <div className="jornada-full-view">
+                <nav className="detail-nav">
+                    <button className="back-btn" onClick={() => {
+                        setSelectedJornada(null);
+                        window.scrollTo(0, 0);
+                    }}>
+                        &larr; Volver a la Ruta de Acción
+                    </button>
+                    <div className="logo-mini">
+                        <img src={logoImg} alt="CAUCE Logo" loading="lazy" />
+                    </div>
+                </nav>
+
+                <div className="detail-hero">
+                    <img src={selectedJornada.image} alt={selectedJornada.title} className="detail-cover-img" fetchpriority="high" decoding="async" />
+                    <div className="detail-hero-content">
+                        <span className="jornada-badge-pill static-badge">{selectedJornada.badge}</span>
+                        <h1>{selectedJornada.title}</h1>
+                    </div>
+                </div>
+
+                <div className="detail-container">
+                    <section className="detail-section">
+                        <h2>¿Qué hicimos?</h2>
+                        <p>{selectedJornada.details}</p>
+                    </section>
+
+                    <section className="detail-section">
+                        <h2>Galería de Fotos</h2>
+                        <div className="jornada-gallery">
+                            {selectedJornada.gallery && selectedJornada.gallery.map((img, idx) => {
+                                const isVideo = img.toLowerCase().endsWith('.mov') || img.toLowerCase().endsWith('.mp4');
+                                const isRaw = img.toLowerCase().endsWith('.cr2') || img.toLowerCase().endsWith('.heic');
+                                
+                                if (isVideo) {
+                                    return (
+                                        <video key={idx} src={img} controls className="jornada-gallery-img" style={{ objectFit: 'cover' }} />
+                                    );
+                                }
+                                
+                                if (isRaw) {
+                                    return (
+                                        <div key={idx} className="jornada-gallery-img raw-fallback">
+                                            <span>📁</span>
+                                            <p>Formato no web ({img.split('.').pop()})</p>
+                                            <a href={img} download>Descargar original</a>
+                                        </div>
+                                    );
+                                }
+                                
+                                return (
+                                    <img key={idx} src={img} alt={`Galería ${idx + 1}`} className="jornada-gallery-img" loading="lazy" decoding="async" />
+                                );
+                            })}
+                        </div>
+                    </section>
+
+                    <section className="detail-section">
+                        <h2>Aliados Estratégicos</h2>
+                        <div className="jornada-allies">
+                            {selectedJornada.allies && selectedJornada.allies.map((ally, idx) => (
+                                <span key={idx} className="ally-badge">{ally}</span>
+                            ))}
+                        </div>
+                    </section>
+                </div>
+
+                <footer className="detail-footer">
+                    <button className="back-btn-bottom" onClick={() => {
+                        setSelectedJornada(null);
+                        window.scrollTo(0, 0);
+                    }}>
+                        Volver a Inicio
+                    </button>
+                </footer>
+            </div>
+        );
+    }
+
     return (
         <>
         <div className="home-container">
@@ -60,14 +156,14 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
                 <div className="container">
                     <nav>
                         <div className="logo">
-                            <img src={logoImg} alt="CAUCE Logo" />
+                            <img src={logoImg} alt="CAUCE Logo" fetchpriority="high" />
                             <span>CAUCE</span>
                         </div>
                         <div className={`nav-links ${menuOpen ? 'active' : ''}`}>
                             <a href="#inicio" onClick={() => setMenuOpen(false)}>Inicio</a>
                             <a href="#equipo" onClick={() => setMenuOpen(false)}>Integrantes</a>
                             <a href="#componentes" onClick={() => setMenuOpen(false)}>Componentes</a>
-                            <a href="#capacitacion" onClick={() => setMenuOpen(false)}>Capacitación</a>
+                            <a href="#jornadas" onClick={() => setMenuOpen(false)}>Ruta de Acción</a>
                             <a href="#preguntas" onClick={() => setMenuOpen(false)}>Preguntas</a>
                             <button className="nav-cta" onClick={handlePlataformaClick}>Plataforma</button>
                         </div>
@@ -102,7 +198,7 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
                                 className="team-member reveal"
                                 onClick={() => setSelectedMember(member)}
                             >
-                                <img src={member.photo} alt={member.name} className="team-avatar" />
+                                <img src={member.photo} alt={member.name} className="team-avatar" loading="lazy" decoding="async" />
                                 <span>{member.name}</span>
                             </div>
                         ))}
@@ -110,7 +206,6 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
                 </div>
             </section>
             
-            {/* ... REST OF THE BODY ... */}
             <section id="sabias" className="did-you-know section-padding">
                 <div className="container">
                     <div className="section-title reveal">
@@ -144,19 +239,31 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
                 </div>
             </section>
 
-            <section id="capacitacion" className="section-padding training">
+            <section id="jornadas" className="section-padding training-section">
                 <div className="container">
                     <div className="section-title reveal">
-                        <h2>Programa de Formación</h2>
-                        <p>Cinco jornadas enfocadas en la protección hídrica (ODS 6 y 12).</p>
+                        <h2>Nuestra Ruta de Acción</h2>
+                        <p style={{ maxWidth: '700px', margin: '0 auto', fontSize: '1.1rem', color: '#64748b', marginTop: '10px' }}>
+                            Descubre las actividades y jornadas que realizamos para proteger las cuencas y promover prácticas sostenibles.
+                        </p>
                     </div>
-                    <div className="training-items">
+                    <div className="jornadas-grid reveal">
                         {data.training.map((item, index) => (
-                            <div key={index} className="training-item reveal">
-                                <div className="training-icon">{index + 1}</div>
-                                <div>
+                            <div 
+                                key={index} 
+                                className="jornada-card"
+                                onClick={() => {
+                                    setSelectedJornada(item);
+                                    window.scrollTo(0, 0);
+                                }}
+                            >
+                                <div className="jornada-card-img" style={{ backgroundImage: `url("${encodeURI(item.image)}")` }}>
+                                    <span className="jornada-badge-pill">{item.badge}</span>
+                                </div>
+                                <div className="jornada-card-content">
                                     <h3>{item.title}</h3>
                                     <p>{item.description}</p>
+                                    <span className="jornada-btn">Leer Detalles &rarr;</span>
                                 </div>
                             </div>
                         ))}
@@ -214,7 +321,7 @@ const HomeView = ({ data, members, onEnterApp, deferredPrompt }) => {
             <div className="modal-overlay" onClick={() => setSelectedMember(null)}>
                 <div className="modal-content" onClick={e => e.stopPropagation()}>
                     <button className="modal-close" onClick={() => setSelectedMember(null)}>&times;</button>
-                    <img src={selectedMember.photo} alt={selectedMember.name} className="modal-img" />
+                    <img src={selectedMember.photo} alt={selectedMember.name} className="modal-img" loading="lazy" />
                     <h2>{selectedMember.name}</h2>
                     <a href={selectedMember.instagram} target="_blank" rel="noopener noreferrer" className="instagram-btn">
                         Ver Instagram

@@ -170,36 +170,204 @@ nav {
     color: var(--secondary);
 }
 
-/* Training Program */
-.training {
-    background: #e9f5e9;
+/* Jornadas / Ruta de Acción - Dark Theme */
+.dark-section {
+    background: #000000;
 }
 
-.training-items {
+.dark-section-title {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.dark-section-title h2 {
+    color: #eab308;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    font-weight: 800;
+}
+
+.jornadas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 40px;
+}
+
+.jornada-card.dark-card {
+    background: #0a0a0a;
+    border-radius: 12px;
+    border: 1px solid #262626;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
     display: flex;
     flex-direction: column;
-    gap: 20px;
 }
 
-.training-item {
-    display: flex;
-    align-items: center;
-    background: var(--white);
-    padding: 20px;
-    border-radius: 15px;
-    gap: 20px;
+.jornada-card.dark-card:hover {
+    transform: translateY(-5px);
+    border-color: #3f3f46;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
-.training-icon {
-    width: 60px;
-    height: 60px;
-    background: var(--primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.jornada-card-img {
+    height: 220px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    border-bottom: 1px solid #262626;
+}
+
+.jornada-badge-pill {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #22c55e;
     color: white;
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 6px 14px;
+    border-radius: 50px;
+    letter-spacing: 1px;
+}
+
+.jornada-card-content {
+    padding: 25px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.jornada-card-content h3 {
+    margin-top: 0;
+    font-size: 1.4rem;
+    color: #ffffff;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.jornada-card-content p {
+    color: #a1a1aa;
+    line-height: 1.6;
+    margin-bottom: 25px;
+    flex: 1;
+    font-size: 0.95rem;
+}
+
+.jornada-btn-gold {
+    color: #eab308;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    transition: gap 0.3s, color 0.3s;
+    gap: 5px;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+}
+
+.jornada-card:hover .jornada-btn-gold {
+    gap: 10px;
+    color: #fde047;
+}
+
+/* Jornada Modal */
+.jornada-modal-content {
+    max-width: 800px;
+    width: 90%;
+    padding: 0;
+    overflow: hidden;
+    background: var(--white);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+}
+
+.jornada-modal-header {
+    height: 250px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 40px;
     flex-shrink: 0;
+}
+
+.jornada-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.8));
+}
+
+.jornada-modal-header h2 {
+    position: relative;
+    color: white;
+    margin: 0;
+    font-size: 2.2rem;
+    z-index: 2;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.jornada-modal-body {
+    padding: 40px;
+    overflow-y: auto;
+}
+
+.jornada-section {
+    margin-bottom: 35px;
+}
+
+.jornada-section h3 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 1.4rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+
+.jornada-section p {
+    line-height: 1.8;
+    color: #475569;
+    font-size: 1.05rem;
+}
+
+.jornada-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.jornada-gallery-img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 12px;
+    transition: transform 0.3s;
+    cursor: pointer;
+}
+
+.jornada-gallery-img:hover {
+    transform: scale(1.05);
+}
+
+.jornada-allies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.ally-badge {
+    background: #e0f2fe;
+    color: #0369a1;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.95rem;
 }
 
 /* Team Section */
@@ -264,5 +432,22 @@ footer {
 
     .team-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .jornadas-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .jornada-modal-header {
+        height: 200px;
+        padding: 20px;
+    }
+
+    .jornada-modal-header h2 {
+        font-size: 1.8rem;
+    }
+    
+    .jornada-modal-body {
+        padding: 20px;
     }
 }

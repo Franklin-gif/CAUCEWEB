@@ -443,36 +443,234 @@ nav {
   color: var(--secondary);
 }
 
-/* Training Program */
-.training {
-  background: #e9f5e9;
+/* Jornadas / Ruta de Acción - Light Clean Theme */
+.training-section {
+    background: var(--bg);
 }
 
-.training-items {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.jornadas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 35px;
+    margin-top: 50px;
 }
 
-.training-item {
-  display: flex;
-  align-items: center;
-  background: var(--white);
-  padding: 20px;
-  border-radius: 15px;
-  gap: 20px;
+.jornada-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.04);
 }
 
-.training-icon {
-  width: 60px;
-  height: 60px;
-  background: var(--primary);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
+.jornada-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.1);
+}
+
+.jornada-card-img {
+    height: 230px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.jornada-badge-pill {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: var(--secondary);
+    color: white;
+    font-weight: 800;
+    font-size: 0.8rem;
+    padding: 8px 18px;
+    border-radius: 50px;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 10px rgba(244, 180, 0, 0.3);
+    z-index: 10;
+}
+
+.jornada-badge-pill.static-badge {
+    position: static;
+    display: inline-block;
+    margin-bottom: 15px;
+    background: var(--primary);
+    box-shadow: 0 4px 10px rgba(45, 90, 39, 0.3);
+}
+
+.jornada-card-content {
+    padding: 30px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.jornada-card-content h3 {
+    margin-top: 0;
+    font-size: 1.4rem;
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.jornada-card-content p {
+    color: #64748b;
+    line-height: 1.7;
+    margin-bottom: 25px;
+    flex: 1;
+    font-size: 1rem;
+}
+
+.jornada-btn {
+    color: var(--primary-light);
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.jornada-card:hover .jornada-btn {
+    color: var(--primary);
+    transform: translateX(5px);
+}
+
+/* Jornada Modal Redesign */
+.jornada-modal-content {
+    padding: 0 !important;
+    max-width: 900px !important;
+    border-radius: 25px !important;
+    text-align: left !important;
+    overflow: hidden;
+    background: #f8fafc !important;
+    display: flex !important;
+    flex-direction: column;
+    max-height: 90vh !important;
+}
+
+.modal-close-overlap {
+    z-index: 100;
+    background: white !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    top: 20px !important;
+    right: 20px !important;
+    color: var(--text) !important;
+    transition: all 0.3s ease;
+}
+
+.modal-close-overlap:hover {
+    background: var(--accent) !important;
+    color: white !important;
+    transform: rotate(90deg);
+}
+
+.jornada-modal-cover {
+    width: 100%;
+    height: 350px;
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+}
+
+.jornada-modal-title-box {
+    background: white;
+    padding: 35px 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+    margin-top: -80px;
+    position: relative;
+    z-index: 10;
+    margin-left: 40px;
+    margin-right: 40px;
+}
+
+.jornada-modal-title-box h2 {
+    color: var(--primary);
+    font-size: 2.2rem;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.jornada-modal-body {
+    padding: 20px 40px 50px 40px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.jornada-section {
+    margin-top: 40px;
+    background: white;
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.02);
+}
+
+.jornada-section h3 {
+    color: var(--primary);
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+}
+
+.jornada-section p {
+    font-size: 1.1rem;
+    color: #475569;
+    line-height: 1.8;
+}
+
+.jornada-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.jornada-gallery-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: transform 0.4s ease;
+    cursor: pointer;
+}
+
+.jornada-gallery-img:hover {
+    transform: scale(1.03);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+}
+
+.jornada-allies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.ally-badge {
+    background: #f1f5f9;
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.ally-badge:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
 }
 
 /* Team Section */
@@ -762,7 +960,8 @@ footer {
 .reveal {
   opacity: 0;
   transform: translateY(30px);
-  transition: all 0.8s ease-out;
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform, opacity;
 }
 
 .reveal.active {
@@ -774,7 +973,8 @@ footer {
   .components-grid,
   .dyk-grid,
   .faqs-grid,
-  .ods-grid {
+  .ods-grid,
+  .jornadas-grid {
     grid-template-columns: 1fr;
   }
 
@@ -794,6 +994,27 @@ footer {
   .slogan-tag {
     font-size: 0.8rem;
     padding: 8px 20px;
+  }
+
+  /* Modal responsiveness */
+  .jornada-modal-cover {
+      height: 200px;
+  }
+  .jornada-modal-title-box {
+      margin-left: 20px;
+      margin-right: 20px;
+      padding: 25px;
+      margin-top: -50px;
+  }
+  .jornada-modal-title-box h2 {
+      font-size: 1.6rem;
+  }
+  .jornada-modal-body {
+      padding: 10px 20px 30px 20px;
+  }
+  .jornada-section {
+      padding: 25px;
+      margin-top: 25px;
   }
 }
 
@@ -907,10 +1128,212 @@ footer {
   
   .logo {
     height: 50px;
-  }
-  
-  .training-item {
+  }  .training-item {
     flex-direction: column;
     text-align: center;
   }
+}
+
+/* Jornada Full View (Separate Page) */
+.jornada-full-view {
+    background-color: #f8fafc;
+    min-height: 100vh;
+    width: 100%;
+    color: var(--text);
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.detail-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: white;
+    box-shadow: var(--sh-sm);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.back-btn {
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--rad-md);
+}
+
+.back-btn:hover {
+    background: #f1f5f9;
+}
+
+.logo-mini img {
+    height: 40px;
+}
+
+.detail-hero {
+    position: relative;
+    width: 100%;
+    height: 55vh;
+    min-height: 450px;
+    overflow: hidden;
+}
+
+.detail-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detail-hero-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 6rem 2rem 3rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.4), transparent);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.detail-hero-content h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-top: 1rem;
+    line-height: 1.1;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.detail-container {
+    max-width: 1100px;
+    margin: 4rem auto;
+    padding: 0 2rem;
+}
+
+.detail-section {
+    margin-bottom: 5rem;
+}
+
+.detail-section h2 {
+    font-size: 2.2rem;
+    color: var(--primary);
+    margin-bottom: 1.8rem;
+    position: relative;
+    padding-bottom: 0.8rem;
+    font-weight: 800;
+}
+
+.detail-section h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 80px;
+    height: 5px;
+    background: var(--secondary);
+    border-radius: 10px;
+}
+
+.detail-section p {
+    font-size: 1.25rem;
+    line-height: 1.9;
+    color: #334155;
+}
+
+.raw-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #e2e8f0;
+    color: #475569;
+    padding: 3rem;
+    border-radius: var(--rad-lg);
+    text-align: center;
+    gap: 1.2rem;
+    border: 2px dashed #cbd5e1;
+}
+
+.raw-fallback span {
+    font-size: 4rem;
+}
+
+.raw-fallback p {
+    font-weight: 600;
+    font-size: 1rem !important;
+}
+
+.raw-fallback a {
+    color: white;
+    background: var(--primary);
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.raw-fallback a:hover {
+    transform: scale(1.05);
+    background: var(--primary-light);
+}
+
+.detail-footer {
+    padding: 5rem 2rem;
+    text-align: center;
+    background: white;
+    border-top: 1px solid var(--border);
+    margin-top: 4rem;
+}
+
+.back-btn-bottom {
+    background: var(--primary);
+    color: white;
+    padding: 1.2rem 4rem;
+    border-radius: 50px;
+    font-weight: 800;
+    font-size: 1.2rem;
+    box-shadow: 0 10px 25px rgba(45, 90, 39, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.back-btn-bottom:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(45, 90, 39, 0.4);
+    background: var(--primary-light);
+}
+
+@media (max-width: 768px) {
+    .detail-nav {
+        padding: 1rem;
+    }
+    .detail-hero {
+        height: 45vh;
+        min-height: 350px;
+    }
+    .detail-hero-content h1 {
+        font-size: 2.2rem;
+    }
+    .detail-container {
+        margin-top: 3rem;
+    }
+    .detail-section h2 {
+        font-size: 1.8rem;
+    }
+    .detail-section p {
+        font-size: 1.1rem;
+    }
+}
+ }
 }
